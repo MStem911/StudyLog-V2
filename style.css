@@ -657,3 +657,42 @@ input[type="time"] { color-scheme: dark; }
   .nav-btn { padding: 14px 22px; }
   .nav-label { font-size: 14px; }
 }
+
+/* ════════════════════════════════════════════════════════════════════════════
+   SAMSUNG / ANDROID CHROME FIX
+   Problem: position:absolute on .screen inside CSS Grid causes touch event
+   coordinate mismatch on Android Chrome (Samsung). Screens appear visually
+   correct but touch targets are offset → buttons don't respond.
+   Fix: switch screens to display:block (non-absolute) in tablet mode,
+   make screen-container the scroll container directly.
+   ════════════════════════════════════════════════════════════════════════════ */
+
+@media (min-width: 768px) {
+
+  /* screen-container scrolls itself, no longer just a clip window */
+  .screen-container {
+    overflow-y: auto;
+    overflow-x: hidden;
+    -webkit-overflow-scrolling: touch;
+    height: 100%;                  /* explicit height for Android grid child */
+  }
+
+  /* screens: no longer position:absolute stacked — just block-level */
+  .screen {
+    position: static;
+    display: none;
+    width: 100%;
+    min-height: 100%;
+    overflow-y: unset;
+    overflow-x: unset;
+  }
+
+  .screen.active {
+    display: block;
+  }
+
+  /* screen-inner: no min-height needed (screen-container handles scroll) */
+  .screen-inner {
+    min-height: unset;
+  }
+}
