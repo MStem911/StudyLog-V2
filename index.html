@@ -10,7 +10,7 @@
   <title>StudyLog</title>
   <link rel="manifest" href="manifest.json">
   <link rel="apple-touch-icon" href="icons/icon-192.png">
-  <link rel="stylesheet" href="style.css?v=1.4">
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
 <div id="app">
@@ -24,7 +24,7 @@
       </div>
     </div>
     <div class="topbar-right">
-      <span class="app-version">v1.4</span>
+      <span class="app-version">v1.5</span>
       <span class="lock-icon">🔒</span>
     </div>
   </header>
@@ -279,18 +279,10 @@
   </div>
 
 </div>
-<script src="app.js?v=1.4"></script>
+<script src="app.js"></script>
 <script>
-    // v1.4: SW neu registrieren (reset alter Cache-Bugs)
   if ('serviceWorker' in navigator) {
-    // Erst alle alten SWs deregistrieren
-    navigator.serviceWorker.getRegistrations().then(regs => {
-      regs.forEach(reg => reg.unregister());
-    });
-    // Dann frischen SW registrieren (mit update-Zwang)
-    navigator.serviceWorker.register('./sw.js?v=1.4', { updateViaCache: 'none' })
-      .then(reg => reg.update());
-  }));
+    window.addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {}));
   }
 </script>
 </body>

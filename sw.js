@@ -1,13 +1,40 @@
-// StudyLog v1.4 — Service Worker deregistriert sich selbst
-// (Vorherige Versionen hatten einen SW-Self-Caching-Bug)
-self.addEventListener('install', () => self.skipWaiting());
-self.addEventListener('activate', async () => {
-  // Alle alten Caches löschen
-  const keys = await caches.keys();
-  await Promise.all(keys.map(k => caches.delete(k)));
-  await self.clients.claim();
-  // Alle Clients neu laden damit sie den frischen Code bekommen
-  const clients = await self.clients.matchAll({ type: 'window' });
-  clients.forEach(client => client.navigate(client.url));
+const CACHE = 'studylog-v17';
+const ASSETS = [
+  './',
+  './index.html',
+  './style.css',
+  './app.js',
+  './manifest.json',
+  './icons/icon-192.png',
+  './icons/icon-512.png',
+];
+
+self.addEventListener('install', e => {
+  e.waitUntil(
+    caches.open(CACHE).then(cache => cache.addAll(ASSETS)).then(() => self.skipWaiting())
+  );
 });
-// Kein fetch-Handler: alle Requests gehen direkt ans Netzwerk
+
+self.addEventListener('activate', e => {
+  e.waitUntil(
+    caches.keys().then(keys =>
+      Promise.all(keys.filter(k => k !== CACHE).map(k => caches.delete(k)))
+    ).then(() => self.clients.claim())
+  );
+});
+
+self.addEventListener('fetch', e => {
+  // Only handle GET requests for same-origin assets
+  if (e.request.method !== 'GET') return;
+  e.respondWith(
+    caches.match(e.request).then(cached => {
+      if (cached) return cached;
+      return fetch(e.request).then(response => {
+        if (!response || response.status !== 200 || response.type === 'opaque') return response;
+        const clone = response.clone();
+        caches.open(CACHE).then(cache => cache.put(e.request, clone));
+        return response;
+      }).catch(() => caches.match('./index.html'));
+    })
+  );
+});
