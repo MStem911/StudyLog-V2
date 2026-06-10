@@ -57,7 +57,8 @@ body {
   height: 100dvh;
   max-width: 430px;
   margin: 0 auto;
-  overflow: hidden;
+  overflow: clip;   /* clip statt hidden: verhindert Scroll-Container-Effekt
+                       der auf Samsung Android Touch-Koordinaten verschiebt */
   position: relative;
 }
 
@@ -479,54 +480,53 @@ input[type="time"] { color-scheme: dark; }
 
 /* ════════════════════════════════════════════════════════════════════════════
    TABLET / RESPONSIVE LAYOUT  (≥ 768 px)
-   Strategie: Side-by-Side mit linker Sidebar-Navigation, breiter Content-Bereich
    ════════════════════════════════════════════════════════════════════════════ */
 
 @media (min-width: 768px) {
 
-  /* ── CSS-Variablen anpassen ─────────────────────────────────────────── */
-  :root {
-    --nav-h:      64px;   /* nicht mehr relevant als bottom-nav auf Tablet */
-    --sidebar-w:  180px;
-  }
+  /* ── Variablen ──────────────────────────────────────────────────────── */
+  :root { --sidebar-w: 180px; }
 
-  /* ── Root-App: full-screen, kein max-width-Limit ───────────────────── */
+  /* ── App-Shell: Grid statt Flex ─────────────────────────────────────── */
+  /*  WICHTIG: overflow bleibt unset — kein overflow:hidden auf #app,
+      das schluckt auf Samsung Android Touch-Events */
   #app {
     max-width: 100%;
     height: 100dvh;
+    overflow: unset;           /* override base overflow:hidden */
     display: grid;
     grid-template-rows: auto 1fr;
     grid-template-columns: var(--sidebar-w) 1fr;
     grid-template-areas:
       "topbar  topbar"
       "sidenav content";
-    overflow: hidden;
   }
 
-  /* ── Topbar über gesamte Breite ─────────────────────────────────────── */
+  /* ── Topbar ──────────────────────────────────────────────────────────── */
   .topbar {
     grid-area: topbar;
     padding: 12px 28px;
     padding-top: calc(12px + var(--safe-top));
   }
-
   .topbar-title { font-size: 16px; }
   .topbar-sub   { font-size: 11px; }
-  .logo { width: 38px; height: 38px; font-size: 14px; }
+  .logo         { width: 38px; height: 38px; font-size: 14px; }
 
-  /* ── Bottom-Nav → Sidebar-Nav links ────────────────────────────────── */
+  /* ── Sidebar-Navigation (ehemals Bottom-Nav) ────────────────────────── */
   .bottom-nav {
     grid-area: sidenav;
     flex-direction: column;
+    justify-content: flex-start;
+    align-items: stretch;
+    gap: 2px;
+    padding: 12px 0 12px;
+    padding-bottom: calc(12px + var(--safe-bot));
     border-top: none;
     border-right: 1px solid var(--border);
-    padding-bottom: var(--safe-bot);
-    padding-top: 12px;
-    justify-content: flex-start;
-    gap: 4px;
     background: #1a1a28;
     width: var(--sidebar-w);
     overflow-y: auto;
+    /* Kein overflow:hidden — damit Touch-Events durchkommen */
   }
 
   .nav-btn {
@@ -536,78 +536,80 @@ input[type="time"] { color-scheme: dark; }
     justify-content: flex-start;
     gap: 12px;
     width: 100%;
-    padding: 12px 18px;
+    padding: 13px 20px;
     border-top: none;
     border-left: 3px solid transparent;
     border-radius: 0;
-    font-size: 13px;
   }
-
   .nav-btn.active {
     border-top-color: transparent;
     border-left-color: var(--purple);
     background: var(--purple-bg);
+    color: var(--purple);
   }
-
   .nav-icon  { font-size: 20px; }
   .nav-label { font-size: 13px; font-weight: 600; }
 
-  /* ── Screen-Container: rechter Bereich ─────────────────────────────── */
+  /* ── Content-Bereich ─────────────────────────────────────────────────── */
+  /*  KEY FIX: screen-container darf KEIN overflow:hidden sein.
+      Stattdessen: die aktive .screen scrollt selbst.
+      position:relative bleibt für die absolut positionierten Screens. */
   .screen-container {
     grid-area: content;
-    overflow: hidden;
-    display: flex;
-    flex-direction: column;
+    position: relative;
+    overflow: hidden;   /* clips the stacked screens — correct */
+    /* height kommt vom 1fr Grid-Row — explicit setzen für Android */
+    height: 100%;
   }
 
+  /* Screens: position:absolute bleibt — aber wir fixen das Touch-Problem
+     anders: indem #app kein overflow:hidden mehr hat, können die Screens
+     korrekt aus ihrem Grid-Cell-Kontext heraus Touch-Events empfangen */
+  .screen {
+    position: absolute;
+    inset: 0;
+    /* height ist jetzt korrekt weil screen-container height:100% hat */
+  }
+
+  /* ── Content Innenabstand ────────────────────────────────────────────── */
   .screen-inner {
     padding: 20px 28px 32px;
-    max-width: 900px;           /* lesbare Zeilenbreite */
-    width: 100%;
+    max-width: 900px;
   }
 
-  /* ── Dialoge größer auf Tablet ──────────────────────────────────────── */
-  .dialog-box       { max-width: 480px; }
-  .dialog-box.wide  { max-width: 560px; }
+  /* ── Dialoge ─────────────────────────────────────────────────────────── */
+  .dialog-box      { max-width: 480px; }
+  .dialog-box.wide { max-width: 560px; }
 
-  /* ── Szenario-Grid: mehr Spalten ────────────────────────────────────── */
+  /* ── Szenario-Buttons ────────────────────────────────────────────────── */
   .scenario-btn {
     min-width: 90px;
     max-width: 150px;
+    padding: 12px 10px;
   }
+  .scenario-btn .sc-icon { font-size: 24px; }
 
-  /* ── Stats-Grid: bis zu 4 Spalten ───────────────────────────────────── */
-  .stats-grid {
-    grid-template-columns: repeat(4, 1fr);
-  }
+  /* ── Stats-Grid: 4 Spalten ───────────────────────────────────────────── */
+  .stats-grid { grid-template-columns: repeat(4, 1fr); }
 
-  /* ── Session-Screen: Timer und Optionen nebeneinander ──────────────── */
+  /* ── Session-Screen: 2-spaltig ───────────────────────────────────────── */
   #screen-session .screen-inner {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    grid-template-rows: auto;
     gap: 12px;
     align-items: start;
   }
-
-  /* Linke Spalte: Teilnehmende + Szenario; Rechte Spalte: Abweichungen, Timer, Save */
   #session-card-proband    { grid-column: 1; }
   #session-card-scenario   { grid-column: 1; }
   #session-card-deviations { grid-column: 2; grid-row: 1 / 3; }
   .timer-card              { grid-column: 2; }
   #save-card               { grid-column: 2; }
 
-  /* ── Timer-Display etwas größer ──────────────────────────────────────── */
+  /* ── Timer ───────────────────────────────────────────────────────────── */
   .timer-display { font-size: 64px; }
 
-  /* ── Proband-Liste: 2-spaltig ────────────────────────────────────────── */
-  #proband-list {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 8px;
-  }
-
-  /* ── Log-Liste: 2-spaltig ────────────────────────────────────────────── */
+  /* ── Listen: 2-spaltig ───────────────────────────────────────────────── */
+  #proband-list,
   #log-list {
     display: grid;
     grid-template-columns: 1fr 1fr;
@@ -625,27 +627,18 @@ input[type="time"] { color-scheme: dark; }
   #screen-export .screen-inner > .stats-grid   { grid-column: 1 / -1; }
   #screen-export .screen-inner > .danger-zone  { grid-column: 1 / -1; }
 
-  /* ── Filter-Row im Log: mehr Platz ──────────────────────────────────── */
-  .filter-row { gap: 12px; }
-
-  /* ── Scenario-Grid-Buttons auf Tablet: etwas breiter ─────────────────── */
-  .scenario-btn { padding: 12px 10px; }
-  .scenario-btn .sc-icon { font-size: 24px; }
-
-  /* ── Toast-Position: rechte Seite, nicht bottom ─────────────────────── */
+  /* ── Toast: neben Sidebar ─────────────────────────────────────────────── */
   .toast {
     bottom: 24px;
     left: calc(var(--sidebar-w) + 24px);
     transform: none;
   }
 
-  /* ── Overlay-Hintergrund korrekt positioniert ───────────────────────── */
-  .overlay {
-    padding: 32px;
-  }
+  /* ── Overlays ─────────────────────────────────────────────────────────── */
+  .overlay { padding: 32px; }
 }
 
-/* ── Large Tablet / kleine Desktops (≥ 1024 px) ──────────────────────────── */
+/* ── Large Tablet / Desktop  (≥ 1024 px) ────────────────────────────────── */
 @media (min-width: 1024px) {
   :root { --sidebar-w: 210px; }
 
@@ -653,46 +646,6 @@ input[type="time"] { color-scheme: dark; }
     padding: 24px 36px 40px;
     max-width: 1000px;
   }
-
-  .nav-btn { padding: 14px 22px; }
+  .nav-btn   { padding: 14px 24px; }
   .nav-label { font-size: 14px; }
-}
-
-/* ════════════════════════════════════════════════════════════════════════════
-   SAMSUNG / ANDROID CHROME FIX
-   Problem: position:absolute on .screen inside CSS Grid causes touch event
-   coordinate mismatch on Android Chrome (Samsung). Screens appear visually
-   correct but touch targets are offset → buttons don't respond.
-   Fix: switch screens to display:block (non-absolute) in tablet mode,
-   make screen-container the scroll container directly.
-   ════════════════════════════════════════════════════════════════════════════ */
-
-@media (min-width: 768px) {
-
-  /* screen-container scrolls itself, no longer just a clip window */
-  .screen-container {
-    overflow-y: auto;
-    overflow-x: hidden;
-    -webkit-overflow-scrolling: touch;
-    height: 100%;                  /* explicit height for Android grid child */
-  }
-
-  /* screens: no longer position:absolute stacked — just block-level */
-  .screen {
-    position: static;
-    display: none;
-    width: 100%;
-    min-height: 100%;
-    overflow-y: unset;
-    overflow-x: unset;
-  }
-
-  .screen.active {
-    display: block;
-  }
-
-  /* screen-inner: no min-height needed (screen-container handles scroll) */
-  .screen-inner {
-    min-height: unset;
-  }
 }
