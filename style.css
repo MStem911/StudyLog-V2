@@ -813,24 +813,22 @@ input[type="time"] { color-scheme: dark; }
 }
 
 .bew-scale-btns {
-  display: flex;
+  display: grid;
+  grid-template-columns: repeat(6, 38px);
   gap: 7px;
-  flex-wrap: wrap;
 }
 
 .bew-scale-labels {
-  display: flex;
-  gap: 14px;
+  display: grid;
+  grid-template-columns: repeat(6, 38px);
+  gap: 7px;
 }
 
 .bew-scale-label {
-  min-width: 38px;
-  width: max-content;
   text-align: center;
   font-size: 9px;
   color: var(--text3);
   line-height: 1.2;
-  flex-shrink: 0;
   transition: color 0.12s;
 }
 
@@ -929,6 +927,10 @@ input[type="time"] { color-scheme: dark; }
   }
   .bew-scale-label {
     min-width: 42px;
+  }
+  .bew-scale-btns,
+  .bew-scale-labels {
+    grid-template-columns: repeat(6, 42px);
   }
 }
 
