@@ -37,6 +37,10 @@
         <span class="nav-icon">☰</span>
         <span class="nav-label">Protokoll</span>
       </button>
+      <button class="nav-item" data-screen="bewertung">
+        <span class="nav-icon">📝</span>
+        <span class="nav-label">Bewertung</span>
+      </button>
       <button class="nav-item" data-screen="export">
         <span class="nav-icon">↓</span>
         <span class="nav-label">Export</span>
@@ -174,6 +178,106 @@
         </div>
       </section>
 
+      <!-- ── Bewertung ── -->
+      <section class="screen" id="screen-bewertung">
+        <div class="screen-inner">
+          <div class="card">
+            <div class="card-label">SITZUNG AUSWÄHLEN</div>
+            <select id="bew-session-select" class="field-select">
+              <option value="">— Sitzung wählen —</option>
+            </select>
+            <div class="confirm-badge hidden" id="bew-session-badge"></div>
+          </div>
+
+          <div id="bew-form-container" class="hidden">
+            <div class="card bew-info-card" id="bew-info-card"></div>
+
+            <div class="card">
+              <div class="card-label bew-dim-label">DIMENSION A – LAGEERKUNDUNG</div>
+              <div class="bew-items">
+                <div class="bew-item"><span class="bew-item-label">1. Systematische Erfassung der Einsatzumgebung</span><div class="bew-scale" data-item="a1"></div></div>
+                <div class="bew-item"><span class="bew-item-label">2. Identifikation relevanter Gefahren</span><div class="bew-scale" data-item="a2"></div></div>
+                <div class="bew-item"><span class="bew-item-label">3. Überblick über Anzahl der Patienten</span><div class="bew-scale" data-item="a3"></div></div>
+                <div class="bew-item"><span class="bew-item-label">4. Priorisierung relevanter Informationen bei der Lagemeldung</span><div class="bew-scale" data-item="a4"></div></div>
+              </div>
+            </div>
+
+            <div class="card">
+              <div class="card-label bew-dim-label">DIMENSION B – ENTSCHEIDUNGSQUALITÄT</div>
+              <div class="bew-items">
+                <div class="bew-item"><span class="bew-item-label">5. Erkennung eines MANV (falls zutreffend)</span><div class="bew-scale" data-item="b5"></div></div>
+                <div class="bew-item"><span class="bew-item-label">6. Logische und leitliniengerechte Prioritätensetzung</span><div class="bew-scale" data-item="b6"></div></div>
+                <div class="bew-item"><span class="bew-item-label">7. Angemessene Nachforderung bzw. Ressourcenanpassung</span><div class="bew-scale" data-item="b7"></div></div>
+                <div class="bew-item"><span class="bew-item-label">8. Richtige Vorgehensweise bei der Erkundung</span><div class="bew-scale" data-item="b8"></div></div>
+              </div>
+            </div>
+
+            <div class="card">
+              <div class="card-label bew-dim-label">DIMENSION C – FÜHRUNG UND KOMMUNIKATION</div>
+              <div class="bew-items">
+                <div class="bew-item"><span class="bew-item-label">9. Klarheit und Struktur der Kommunikation</span><div class="bew-scale" data-item="c9"></div></div>
+                <div class="bew-item"><span class="bew-item-label">10. Korrekte Lagemeldung nach MELDEN-Schema</span><div class="bew-scale" data-item="c10"></div></div>
+              </div>
+            </div>
+
+            <div class="card">
+              <div class="card-label bew-dim-label">DIMENSION D – STRUKTUR UND EFFIZIENZ</div>
+              <div class="bew-items">
+                <div class="bew-item"><span class="bew-item-label">11. Logische Handlungsabfolge</span><div class="bew-scale" data-item="d11"></div></div>
+                <div class="bew-item"><span class="bew-item-label">12. Zeitlich angemessenes und prioritätsgerechtes Handeln</span><div class="bew-scale" data-item="d12"></div></div>
+              </div>
+            </div>
+
+            <div class="card">
+              <div class="card-label bew-dim-label">DIMENSION E – UMSETZUNG DER LEHRGANGSINHALTE</div>
+              <div class="bew-items">
+                <div class="bew-item"><span class="bew-item-label">13. Anwendung der 4 Phasen der Erkundung</span><div class="bew-scale" data-item="e13"></div></div>
+                <div class="bew-item"><span class="bew-item-label">15. Leitlinienorientierte Entscheidungsfindung</span><div class="bew-scale" data-item="e15"></div></div>
+                <div class="bew-item"><span class="bew-item-label">16. Berücksichtigung der Eigenschutzprinzipien</span><div class="bew-scale" data-item="e16"></div></div>
+              </div>
+            </div>
+
+            <div class="card">
+              <div class="card-label bew-dim-label">ZUSATZBLOCK – VERGLEICH SUBJEKTIVE PERFORMANCE</div>
+              <div class="bew-items">
+                <div class="bew-item"><span class="bew-item-label">17. Lage effektiv erfasst</span><div class="bew-scale" data-item="z17"></div></div>
+                <div class="bew-item"><span class="bew-item-label">18. Entscheidungen angemessen</span><div class="bew-scale" data-item="z18"></div></div>
+                <div class="bew-item"><span class="bew-item-label">19. Richtige Prioritäten gesetzt</span><div class="bew-scale" data-item="z19"></div></div>
+                <div class="bew-item"><span class="bew-item-label">20. Gesamtleistung</span><div class="bew-scale" data-item="z20"></div></div>
+              </div>
+            </div>
+
+            <div class="card">
+              <div class="card-label">ANMERKUNGEN (OPTIONAL)</div>
+              <textarea id="bew-notes" rows="3" placeholder="Ergänzende Beobachtungen…"></textarea>
+            </div>
+
+            <div class="bew-legend card">
+              <div class="card-label" style="margin-bottom:8px">SKALA</div>
+              <div class="bew-legend-row">
+                <span class="bew-legend-item"><span class="bew-pip bew-pip-1">1</span> sehr gut</span>
+                <span class="bew-legend-item"><span class="bew-pip bew-pip-2">2</span> gut</span>
+                <span class="bew-legend-item"><span class="bew-pip bew-pip-3">3</span> befriedigend</span>
+                <span class="bew-legend-item"><span class="bew-pip bew-pip-4">4</span> ausreichend</span>
+                <span class="bew-legend-item"><span class="bew-pip bew-pip-5">5</span> mangelhaft</span>
+                <span class="bew-legend-item"><span class="bew-pip bew-pip-6">6</span> ungenügend</span>
+              </div>
+            </div>
+
+            <div class="btn-col" style="padding-bottom: 24px;">
+              <button class="btn btn-save full-width" id="btn-save-bewertung">💾 Bewertung speichern</button>
+              <button class="btn btn-ghost full-width" id="btn-clear-bewertung">✕ Eingaben zurücksetzen</button>
+            </div>
+          </div>
+
+          <div id="bew-empty" class="empty-state hidden">
+            <div class="empty-icon">📝</div>
+            <div class="empty-text">Keine Sitzung ausgewählt</div>
+            <div class="empty-sub">Wähle oben eine Sitzung aus</div>
+          </div>
+        </div>
+      </section>
+
       <!-- ── Export ── -->
       <section class="screen" id="screen-export">
         <div class="screen-inner">
@@ -215,10 +319,23 @@
       <button class="nav-btn active" data-screen="probanden"><span class="nav-icon">👤</span><span class="nav-label">Teilnehmende</span></button>
       <button class="nav-btn" data-screen="session"><span class="nav-icon">⏺</span><span class="nav-label">Sitzung</span></button>
       <button class="nav-btn" data-screen="log"><span class="nav-icon">☰</span><span class="nav-label">Protokoll</span></button>
+      <button class="nav-btn" data-screen="bewertung"><span class="nav-icon">📝</span><span class="nav-label">Bewertung</span></button>
       <button class="nav-btn" data-screen="export"><span class="nav-icon">↓</span><span class="nav-label">Export</span></button>
     </nav>
 
   </div><!-- /main-wrapper -->
+
+  <!-- Bewertungsbogen Prompt (nach Sitzung speichern) -->
+  <div id="bew-prompt-overlay" class="overlay hidden">
+    <div class="dialog-box">
+      <div class="dialog-title">📝 Bewertungsbogen ausfüllen?</div>
+      <div class="dialog-msg" id="bew-prompt-msg">Möchtest du für diese Sitzung jetzt den Trainerbewertungsbogen ausfüllen?</div>
+      <div class="btn-row">
+        <button class="btn btn-primary flex-1" id="bew-prompt-yes">✓ Ja, jetzt ausfüllen</button>
+        <button class="btn btn-ghost flex-1" id="bew-prompt-no">Später / Nein</button>
+      </div>
+    </div>
+  </div>
 
   <div id="toast" class="toast hidden"></div>
 

@@ -3,11 +3,12 @@
 document.addEventListener('DOMContentLoaded', function() {
 
 // ── Storage Keys ────────────────────────────────────────────────────────────
-const KEY_PROBANDEN = 'sl_probanden';
-const KEY_SESSIONS  = 'sl_sessions';
-const KEY_SETTINGS  = 'sl_settings';
-const KEY_SCENARIOS = 'sl_scenarios';
-const KEY_TAGS      = 'sl_tags';
+const KEY_PROBANDEN  = 'sl_probanden';
+const KEY_SESSIONS   = 'sl_sessions';
+const KEY_SETTINGS   = 'sl_settings';
+const KEY_SCENARIOS  = 'sl_scenarios';
+const KEY_TAGS       = 'sl_tags';
+const KEY_BEWERTUNGEN = 'sl_bewertungen';
 
 const DEFAULT_SCENARIOS = [
   { id: 'sc_vr', name: 'Szenario VR Welt',       abbr: 'VR', icon: '🥽' },
@@ -30,6 +31,7 @@ let sessions         = [];
 let settings         = { deviceLabel: '', lastExport: null };
 let scenarios        = [];
 let tags             = [];
+let bewertungen      = [];
 let selectedScenId   = '';
 let timerInterval    = null;
 let timerStart       = null;
@@ -40,15 +42,17 @@ let sessionRunning   = false;
 let detailSessionId  = null;
 let editingProbandId = null;
 let confirmCallback  = null;
+let pendingBewertungSessionId = null;
 
 // ── Persistence ──────────────────────────────────────────────────────────────
 function save() {
   try {
-    localStorage.setItem(KEY_PROBANDEN, JSON.stringify(probanden));
-    localStorage.setItem(KEY_SESSIONS,  JSON.stringify(sessions));
-    localStorage.setItem(KEY_SETTINGS,  JSON.stringify(settings));
-    localStorage.setItem(KEY_SCENARIOS, JSON.stringify(scenarios));
-    localStorage.setItem(KEY_TAGS,      JSON.stringify(tags));
+    localStorage.setItem(KEY_PROBANDEN,   JSON.stringify(probanden));
+    localStorage.setItem(KEY_SESSIONS,    JSON.stringify(sessions));
+    localStorage.setItem(KEY_SETTINGS,    JSON.stringify(settings));
+    localStorage.setItem(KEY_SCENARIOS,   JSON.stringify(scenarios));
+    localStorage.setItem(KEY_TAGS,        JSON.stringify(tags));
+    localStorage.setItem(KEY_BEWERTUNGEN, JSON.stringify(bewertungen));
   } catch(e) { showToast('⚠ Speicherfehler'); }
 }
 
@@ -59,9 +63,11 @@ function load() {
     const st = localStorage.getItem(KEY_SETTINGS);
     const sc = localStorage.getItem(KEY_SCENARIOS);
     const tg = localStorage.getItem(KEY_TAGS);
-    if (p)  probanden = JSON.parse(p);
-    if (s)  sessions  = JSON.parse(s);
-    if (st) settings  = { ...settings, ...JSON.parse(st) };
+    const bw = localStorage.getItem(KEY_BEWERTUNGEN);
+    if (p)  probanden   = JSON.parse(p);
+    if (s)  sessions    = JSON.parse(s);
+    if (st) settings    = { ...settings, ...JSON.parse(st) };
+    if (bw) bewertungen = JSON.parse(bw);
     scenarios = sc ? JSON.parse(sc) : deepCopy(DEFAULT_SCENARIOS);
     if (!scenarios.length) scenarios = deepCopy(DEFAULT_SCENARIOS);
     tags = tg ? JSON.parse(tg) : [...DEFAULT_TAGS];
@@ -152,6 +158,7 @@ const PAGE_TITLES = {
   probanden: 'Teilnehmende',
   session:   'Sitzung aufzeichnen',
   log:       'Protokoll',
+  bewertung: 'Trainerbewertungsbogen',
   export:    'Export & Einstellungen',
 };
 
@@ -174,6 +181,7 @@ function showScreen(name) {
   if (name === 'log')       renderLog();
   if (name === 'export')    renderExport();
   if (name === 'probanden') renderProbanden();
+  if (name === 'bewertung') renderBewertungScreen();
 }
 
 // Mobile bottom nav
@@ -455,8 +463,9 @@ document.getElementById('btn-save-session').addEventListener('click', () => {
   const sc = scenarios.find(x => x.id === selectedScenId);
   const deviations = getActiveTags('deviation-tags');
   const notes      = document.getElementById('session-notes').value.trim();
+  const newSessionId = uid();
   sessions.push({
-    id: uid(), probandId,
+    id: newSessionId, probandId,
     pseudo:       p  ? p.pseudo  : '?',
     sensor:       p  ? p.sensor  : '?',
     scenarioId:   selectedScenId,
@@ -477,7 +486,13 @@ document.getElementById('btn-save-session').addEventListener('click', () => {
   document.getElementById('session-notes').value = '';
   updateTimerUI();
   showToast('✓ Sitzung gespeichert');
-  setTimeout(() => showScreen('log'), 600);
+  // Bewertungsbogen-Prompt anzeigen
+  pendingBewertungSessionId = newSessionId;
+  const ps = sessions[sessions.length - 1];
+  const sc2 = scenarios.find(x => x.id === ps.scenarioId);
+  document.getElementById('bew-prompt-msg').textContent =
+    `Möchtest du jetzt den Trainerbewertungsbogen für ${ps.pseudo} · ${sc2 ? sc2.abbr : ps.scenarioAbbr || '?'} ausfüllen?`;
+  document.getElementById('bew-prompt-overlay').classList.remove('hidden');
 });
 
 // ── Scenario Manager ──────────────────────────────────────────────────────────
@@ -845,22 +860,43 @@ document.getElementById('btn-export-csv').addEventListener('click', () => {
   if (!data.length) { showToast('⚠ Keine Daten'); return; }
   const hdr = ['ID','Datum','Pseudonym','Sensoriknummer','Szenario','Szenario_Abkuerzung',
                 'Start_ISO','Ende_ISO','Start_Uhrzeit','Ende_Uhrzeit',
-                'Dauer_s','Dauer_mm_ss','Abweichungen','Anmerkungen','Geraet_Betreuung'];
-  const rows = data.map(s => [
-    s.id, s.date, s.pseudo, s.sensor,
-    s.scenarioName||'?', s.scenarioAbbr||'?',
-    s.startISO, s.endISO,
-    localTimeStr(s.startISO), localTimeStr(s.endISO),
-    s.duration_s||0, formatTime(s.duration_s||0),
-    (s.deviations||[]).join('; '), s.notes||'', s.deviceLabel||''
-  ].map(escCsv).join(','));
+                'Dauer_s','Dauer_mm_ss','Abweichungen','Anmerkungen','Geraet_Betreuung',
+                'Bew_A1','Bew_A2','Bew_A3','Bew_A4',
+                'Bew_B5','Bew_B6','Bew_B7','Bew_B8',
+                'Bew_C9','Bew_C10','Bew_D11','Bew_D12',
+                'Bew_E13','Bew_E15','Bew_E16',
+                'Bew_Z17','Bew_Z18','Bew_Z19','Bew_Z20',
+                'Bew_Anmerkungen'];
+  const rows = data.map(s => {
+    const bew = bewertungen.find(b => b.sessionId === s.id);
+    const sc = bew ? bew.scores : {};
+    return [
+      s.id, s.date, s.pseudo, s.sensor,
+      s.scenarioName||'?', s.scenarioAbbr||'?',
+      s.startISO, s.endISO,
+      localTimeStr(s.startISO), localTimeStr(s.endISO),
+      s.duration_s||0, formatTime(s.duration_s||0),
+      (s.deviations||[]).join('; '), s.notes||'', s.deviceLabel||'',
+      sc.a1??'', sc.a2??'', sc.a3??'', sc.a4??'',
+      sc.b5??'', sc.b6??'', sc.b7??'', sc.b8??'',
+      sc.c9??'', sc.c10??'', sc.d11??'', sc.d12??'',
+      sc.e13??'', sc.e15??'', sc.e16??'',
+      sc.z17??'', sc.z18??'', sc.z19??'', sc.z20??'',
+      bew ? (bew.notes||'') : ''
+    ].map(escCsv).join(',');
+  });
   downloadFile('\uFEFF' + [hdr.join(','),...rows].join('\r\n'), `studylog_${dateSlug()}.csv`, 'text/csv;charset=utf-8;');
   recordExport(); showToast('✓ CSV: ' + data.length + ' Sitzungen');
 });
 document.getElementById('btn-export-json').addEventListener('click', () => {
   const data = getExportSessions();
   if (!data.length) { showToast('⚠ Keine Daten'); return; }
-  const enriched = data.map(s => ({ ...s, start_local: localTimeStr(s.startISO), end_local: localTimeStr(s.endISO) }));
+  const enriched = data.map(s => ({
+    ...s,
+    start_local: localTimeStr(s.startISO),
+    end_local:   localTimeStr(s.endISO),
+    bewertung:   bewertungen.find(b => b.sessionId === s.id) || null
+  }));
   downloadFile(JSON.stringify(enriched, null, 2), `studylog_${dateSlug()}.json`, 'application/json');
   recordExport(); showToast('✓ JSON: ' + data.length + ' Sitzungen');
 });
@@ -878,12 +914,181 @@ function recordExport() {
 }
 document.getElementById('btn-clear-data').addEventListener('click', () => {
   showConfirm('⚠ Alle Daten löschen',
-    'Alle Teilnehmenden und Sitzungsdaten werden unwiderruflich gelöscht. Vorher exportieren!',
+    'Alle Teilnehmenden, Sitzungsdaten und Bewertungen werden unwiderruflich gelöscht. Vorher exportieren!',
     () => {
-      probanden = []; sessions = []; settings.lastExport = null;
+      probanden = []; sessions = []; bewertungen = []; settings.lastExport = null;
       save(); renderProbanden(); renderLog(); renderExport();
       showToast('Alle Daten gelöscht');
     });
+});
+
+// ══════════════════════════════════════════════════════════════════════════════
+// BEWERTUNGSBOGEN
+// ══════════════════════════════════════════════════════════════════════════════
+
+const BEW_ITEMS = ['a1','a2','a3','a4','b5','b6','b7','b8','c9','c10','d11','d12','e13','e15','e16','z17','z18','z19','z20'];
+
+// Post-Session Prompt
+document.getElementById('bew-prompt-yes').addEventListener('click', () => {
+  document.getElementById('bew-prompt-overlay').classList.add('hidden');
+  showScreen('bewertung');
+  // Sitzung vorauswählen
+  if (pendingBewertungSessionId) {
+    const sel = document.getElementById('bew-session-select');
+    sel.value = pendingBewertungSessionId;
+    sel.dispatchEvent(new Event('change'));
+  }
+});
+document.getElementById('bew-prompt-no').addEventListener('click', () => {
+  document.getElementById('bew-prompt-overlay').classList.add('hidden');
+  pendingBewertungSessionId = null;
+  setTimeout(() => showScreen('log'), 100);
+});
+
+function renderBewertungScreen() {
+  buildBewertungSessionSelect();
+}
+
+function buildBewertungSessionSelect() {
+  const sel = document.getElementById('bew-session-select');
+  const cur = sel.value;
+  const sorted = sessions.slice().reverse();
+  sel.innerHTML = '<option value="">— Sitzung wählen —</option>' +
+    sorted.map(s => {
+      const sc = scenarios.find(x => x.id === s.scenarioId);
+      const hasBew = bewertungen.some(b => b.sessionId === s.id);
+      return `<option value="${esc(s.id)}">${esc(s.pseudo)} · ${sc ? esc(sc.abbr) : esc(s.scenarioAbbr || '?')} · ${esc(s.date)}${hasBew ? ' ✓' : ''}</option>`;
+    }).join('');
+  if (sorted.find(s => s.id === cur)) sel.value = cur;
+  updateBewertungForm();
+}
+
+document.getElementById('bew-session-select').addEventListener('change', updateBewertungForm);
+
+function updateBewertungForm() {
+  const sel       = document.getElementById('bew-session-select');
+  const sessionId = sel.value;
+  const container = document.getElementById('bew-form-container');
+  const empty     = document.getElementById('bew-empty');
+  const badge     = document.getElementById('bew-session-badge');
+
+  if (!sessionId) {
+    container.classList.add('hidden');
+    empty.classList.remove('hidden');
+    badge.classList.add('hidden');
+    return;
+  }
+
+  const s  = sessions.find(x => x.id === sessionId);
+  const sc = s ? scenarios.find(x => x.id === s.scenarioId) : null;
+  empty.classList.add('hidden');
+  container.classList.remove('hidden');
+
+  // Badge
+  if (s) {
+    badge.textContent = `✓  ${s.pseudo}  ·  ${sc ? sc.icon + ' ' + sc.abbr : s.scenarioAbbr || '?'}  ·  ${s.date}`;
+    badge.classList.remove('hidden');
+  }
+
+  // Info-Card
+  const infoCard = document.getElementById('bew-info-card');
+  const hasBew = bewertungen.some(b => b.sessionId === sessionId);
+  infoCard.innerHTML = hasBew
+    ? `<div class="bew-existing-hint">⚠ Für diese Sitzung existiert bereits eine Bewertung. Speichern überschreibt diese.</div>`
+    : `<div class="bew-new-hint">Neue Bewertung für: <strong>${esc(s ? s.pseudo : '')} · ${esc(sc ? sc.name : s ? s.scenarioName || '?' : '?')}</strong></div>`;
+
+  // Skalen neu rendern
+  BEW_ITEMS.forEach(key => renderBewScale(key));
+
+  // Bestehende Bewertung laden falls vorhanden
+  const existing = bewertungen.find(b => b.sessionId === sessionId);
+  if (existing) {
+    BEW_ITEMS.forEach(key => {
+      const val = existing.scores[key];
+      if (val) {
+        const container2 = document.querySelector(`.bew-scale[data-item="${key}"]`);
+        if (container2) {
+          container2.querySelectorAll('.bew-pip-btn').forEach(btn => {
+            btn.classList.toggle('selected', btn.dataset.val === String(val));
+          });
+        }
+      }
+    });
+    document.getElementById('bew-notes').value = existing.notes || '';
+  } else {
+    document.getElementById('bew-notes').value = '';
+  }
+}
+
+function renderBewScale(key) {
+  const container = document.querySelector(`.bew-scale[data-item="${key}"]`);
+  if (!container) return;
+  container.innerHTML = [1,2,3,4,5,6].map(n =>
+    `<button class="bew-pip-btn bew-pip-${n}" data-val="${n}" aria-label="Note ${n}">${n}</button>`
+  ).join('');
+  container.querySelectorAll('.bew-pip-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      container.querySelectorAll('.bew-pip-btn').forEach(b => b.classList.remove('selected'));
+      btn.classList.add('selected');
+    });
+  });
+}
+
+function getBewScores() {
+  const scores = {};
+  BEW_ITEMS.forEach(key => {
+    const container = document.querySelector(`.bew-scale[data-item="${key}"]`);
+    const selected  = container ? container.querySelector('.bew-pip-btn.selected') : null;
+    scores[key]     = selected ? parseInt(selected.dataset.val, 10) : null;
+  });
+  return scores;
+}
+
+document.getElementById('btn-save-bewertung').addEventListener('click', () => {
+  const sessionId = document.getElementById('bew-session-select').value;
+  if (!sessionId) { showToast('⚠ Sitzung wählen'); return; }
+  const scores = getBewScores();
+  const filled = Object.values(scores).filter(v => v !== null).length;
+  if (filled === 0) { showToast('⚠ Mindestens eine Bewertung eingeben'); return; }
+
+  const s  = sessions.find(x => x.id === sessionId);
+  const sc = s ? scenarios.find(x => x.id === s.scenarioId) : null;
+  const notes = document.getElementById('bew-notes').value.trim();
+
+  // Bestehende überschreiben oder neu anlegen
+  const existingIdx = bewertungen.findIndex(b => b.sessionId === sessionId);
+  const entry = {
+    id:           existingIdx >= 0 ? bewertungen[existingIdx].id : uid(),
+    sessionId,
+    pseudo:       s  ? s.pseudo       : '?',
+    sensor:       s  ? s.sensor       : '?',
+    scenarioId:   s  ? s.scenarioId   : '?',
+    scenarioName: sc ? sc.name        : (s ? s.scenarioName || '?' : '?'),
+    scenarioAbbr: sc ? sc.abbr        : (s ? s.scenarioAbbr || '?' : '?'),
+    date:         s  ? s.date         : '?',
+    scores, notes,
+    savedAt:      new Date().toISOString()
+  };
+
+  if (existingIdx >= 0) {
+    bewertungen[existingIdx] = entry;
+    showToast('✓ Bewertung aktualisiert');
+  } else {
+    bewertungen.push(entry);
+    showToast('✓ Bewertung gespeichert');
+  }
+  save();
+  buildBewertungSessionSelect(); // Haken in Dropdown aktualisieren
+  pendingBewertungSessionId = null;
+});
+
+document.getElementById('btn-clear-bewertung').addEventListener('click', () => {
+  BEW_ITEMS.forEach(key => {
+    const container = document.querySelector(`.bew-scale[data-item="${key}"]`);
+    if (container) container.querySelectorAll('.bew-pip-btn').forEach(b => b.classList.remove('selected'));
+  });
+  document.getElementById('bew-notes').value = '';
+  showToast('Eingaben zurückgesetzt');
 });
 
 // ── INIT ──────────────────────────────────────────────────────────────────────
