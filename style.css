@@ -806,13 +806,13 @@ input[type="time"] { color-scheme: dark; }
   line-height: 1.4;
 }
 
-.bew-scale-wrap {
+.bew-scale {
   display: flex;
   flex-direction: column;
   gap: 4px;
 }
 
-.bew-scale {
+.bew-scale-btns {
   display: flex;
   gap: 7px;
   flex-wrap: wrap;
@@ -820,22 +820,24 @@ input[type="time"] { color-scheme: dark; }
 
 .bew-scale-labels {
   display: flex;
-  gap: 7px;
 }
 
 .bew-scale-label {
   width: 38px;
+  margin-right: 7px;
+  text-align: center;
   font-size: 9px;
   color: var(--text3);
-  text-align: center;
   line-height: 1.2;
   flex-shrink: 0;
+  transition: color 0.12s;
 }
 
-@media (min-width: 480px) {
-  .bew-scale-label {
-    width: 42px;
-  }
+.bew-scale-label:last-child { margin-right: 0; }
+
+.bew-scale-label.active {
+  color: var(--text1);
+  font-weight: 600;
 }
 
 .bew-pip-btn {
@@ -925,6 +927,10 @@ input[type="time"] { color-scheme: dark; }
     width: 42px;
     height: 42px;
     font-size: 15px;
+  }
+  .bew-scale-label {
+    width: 42px;
+    margin-right: 7px;
   }
 }
 
