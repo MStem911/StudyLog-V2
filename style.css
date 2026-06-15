@@ -31,9 +31,9 @@
   --safe-bot:   env(safe-area-inset-bottom, 0px);
   --radius:     14px;
   --radius-sm:  9px;
-  --text-sm:    12px;
-  --text-md:    15px;
-  --text-lg:    18px;
+  --text-sm:    14px;
+  --text-md:    18px;
+  --text-lg:    22px;
 }
 
 html {
