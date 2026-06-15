@@ -238,8 +238,16 @@ body {
 /* ══════════════════════════════════════════════════════
    Mobile baseline for multi-column layouts
 ══════════════════════════════════════════════════════ */
-.session-layout,
-.export-layout {
+.session-col-left,
+.session-col-right,
+.export-col-main,
+.export-col-side {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+
   display: flex;
   flex-direction: column;
   gap: 16px;
@@ -774,6 +782,12 @@ input[type="time"] { color-scheme: dark; }
   margin-bottom: 4px;
 }
 .tag-edit-input { width: 100%; margin-bottom: 0; }
+
+#bew-form-container {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
 
 /* ══════════════════════════════════════════════════════
    BEWERTUNGSBOGEN
