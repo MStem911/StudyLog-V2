@@ -316,7 +316,7 @@ body {
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: var(--radius);
-  padding: 14px;
+  padding: 16px;
 }
 .card-label {
   font-size: 10px; font-weight: 700; color: var(--text3);
@@ -462,7 +462,7 @@ input[type="time"] { color-scheme: dark; }
 .btn-icon.btn-primary { background: var(--purple-d); color: #fff; }
 
 .btn-icon-sm {
-  width: 30px; height: 30px; border-radius: 8px;
+  width: 30px; height: 30px; border-radius: var(--radius-sm);
   border: 1px solid var(--border); background: var(--surface3); color: var(--text2);
   font-size: 14px; cursor: pointer;
   display: flex; align-items: center; justify-content: center;
@@ -509,7 +509,7 @@ input[type="time"] { color-scheme: dark; }
 .proband-item {
   width: 100%;
   background: var(--surface); border: 1px solid var(--border);
-  border-radius: var(--radius); padding: 12px 14px;
+  border-radius: var(--radius); padding: 12px 16px;
   display: flex; align-items: center; gap: 12px;
   cursor: pointer; -webkit-tap-highlight-color: transparent;
   touch-action: manipulation;
@@ -567,7 +567,7 @@ input[type="time"] { color-scheme: dark; }
 .log-entry {
   width: 100%;
   background: var(--surface); border: 1px solid var(--border);
-  border-radius: var(--radius); padding: 12px 14px;
+  border-radius: var(--radius); padding: 12px 16px;
   border-left: 3px solid var(--purple-d);
   cursor: pointer; -webkit-tap-highlight-color: transparent;
   touch-action: manipulation;
@@ -632,7 +632,7 @@ input[type="time"] { color-scheme: dark; }
 .stats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
 .stat-card {
   background: var(--surface); border: 1px solid var(--border);
-  border-radius: var(--radius-sm); padding: 14px 8px; text-align: center;
+  border-radius: var(--radius-sm); padding: 14px 12px; text-align: center;
 }
 .stat-value { font-size: 22px; font-weight: 700; color: var(--text1); }
 .stat-label { font-size: 10px; color: var(--text3); margin-top: 4px; }
@@ -655,7 +655,7 @@ input[type="time"] { color-scheme: dark; }
 .sm-abbr  { font-size: 11px; color: var(--text3); }
 .sm-btns  { display: flex; gap: 6px; flex-shrink: 0; }
 .sm-btn {
-  font-size: 11px; padding: 4px 10px; border-radius: 6px;
+  font-size: 11px; padding: 4px 10px; border-radius: var(--radius-sm);
   border: 1px solid var(--border2); background: transparent; color: var(--text2);
   cursor: pointer; font-family: inherit;
   -webkit-tap-highlight-color: transparent; touch-action: manipulation;
@@ -720,7 +720,6 @@ input[type="time"] { color-scheme: dark; }
   padding: 20px; width: 100%;
   max-width: 380px;
   max-height: 90vh; overflow-y: auto;
-  /* Prevent overlay click from propagating */
   position: relative;
 }
 .dialog-box.wide { max-width: 520px; }
@@ -904,7 +903,7 @@ input[type="time"] { color-scheme: dark; }
   justify-content: center;
   width: 24px;
   height: 24px;
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   border: 1px solid var(--border2);
   background: var(--surface2);
   font-size: 12px;
