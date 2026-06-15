@@ -4,7 +4,7 @@
   "description": "Protokollierungs-App für Studiendurchführung – UniBw München",
   "start_url": "./",
   "display": "standalone",
-  "orientation": "any",
+  "orientation": "portrait",
   "background_color": "#12121a",
   "theme_color": "#12121a",
   "lang": "de",
@@ -21,9 +21,5 @@
       "type": "image/png",
       "purpose": "any maskable"
     }
-  ],
-  "display_override": [
-    "standalone",
-    "minimal-ui"
   ]
 }
