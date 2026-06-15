@@ -2,7 +2,7 @@
 <html lang="de">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="StudyLog">
@@ -15,210 +15,144 @@
 <body>
 <div id="app">
 
-  <!-- ── Sidebar Nav (Desktop/Tablet) ── -->
-  <aside class="sidebar" id="sidebar">
-    <div class="sidebar-header">
+  <header class="topbar">
+    <div class="topbar-left">
       <div class="logo">SL</div>
-      <div class="sidebar-titles">
-        <span class="sidebar-title">StudyLog</span>
-        <span class="sidebar-sub" id="sidebar-sub">UniBw München</span>
+      <div class="topbar-titles">
+        <span class="topbar-title">StudyLog</span>
+        <span class="topbar-sub" id="topbar-sub">UniBw München</span>
       </div>
     </div>
-    <nav class="sidebar-nav">
-      <button class="nav-item active" data-screen="probanden">
-        <span class="nav-icon">👤</span>
-        <span class="nav-label">Teilnehmende</span>
-      </button>
-      <button class="nav-item" data-screen="session">
-        <span class="nav-icon">⏺</span>
-        <span class="nav-label">Sitzung</span>
-      </button>
-      <button class="nav-item" data-screen="log">
-        <span class="nav-icon">☰</span>
-        <span class="nav-label">Protokoll</span>
-      </button>
-      <button class="nav-item" data-screen="export">
-        <span class="nav-icon">↓</span>
-        <span class="nav-label">Export</span>
-      </button>
-    </nav>
-    <div class="sidebar-footer">
-      <span class="app-version">v1.1</span>
+    <div class="topbar-right">
+      <span class="app-version">v1.0</span>
       <span class="lock-icon">🔒</span>
     </div>
-  </aside>
+  </header>
 
-  <!-- ── Main content area ── -->
-  <div class="main-wrapper">
+  <main class="screen-container">
 
-    <!-- Topbar (Mobile only) -->
-    <header class="topbar">
-      <div class="topbar-left">
-        <div class="logo">SL</div>
-        <div class="topbar-titles">
-          <span class="topbar-title">StudyLog</span>
-          <span class="topbar-sub" id="topbar-sub">UniBw München</span>
+    <!-- ── Teilnehmende ── -->
+    <section class="screen active" id="screen-probanden">
+      <div class="screen-inner">
+        <div class="search-row">
+          <input type="text" id="search-input" placeholder="🔍  Suchen…" autocomplete="off" autocorrect="off" autocapitalize="none">
+          <button class="btn-icon btn-primary" id="btn-add-proband" aria-label="Neu">+</button>
+        </div>
+        <div class="card form-card hidden" id="add-form">
+          <div class="card-label">NEUE PERSON ANLEGEN</div>
+          <label class="field-label" for="inp-pseudo">Pseudonym</label>
+          <input type="text" id="inp-pseudo" placeholder="z.B. P-042" autocomplete="off" autocorrect="off" autocapitalize="characters" inputmode="text">
+          <label class="field-label" for="inp-sensor">Sensoriknummer (1–12)</label>
+          <input type="number" id="inp-sensor" placeholder="z.B. 7" min="1" max="12" inputmode="numeric">
+          <label class="field-label" for="inp-note">Notiz (optional)</label>
+          <input type="text" id="inp-note" placeholder="z.B. Linkshänder" autocorrect="off" inputmode="text">
+          <div class="btn-row">
+            <button class="btn btn-primary flex-1" id="btn-save-proband">✓ Anlegen</button>
+            <button class="btn btn-ghost" id="btn-cancel-proband">Abbrechen</button>
+          </div>
+        </div>
+        <div class="section-label" id="proband-count-label">TEILNEHMENDE</div>
+        <div id="proband-list" class="item-list"></div>
+        <div id="proband-empty" class="empty-state hidden">
+          <div class="empty-icon">👥</div>
+          <div class="empty-text">Noch keine Teilnehmenden angelegt</div>
+          <div class="empty-sub">Tippe auf + um eine Person hinzuzufügen</div>
         </div>
       </div>
-      <div class="topbar-right">
-        <span class="app-version">v1.1</span>
-        <span class="lock-icon">🔒</span>
+    </section>
+
+    <!-- ── Sitzung ── -->
+    <section class="screen" id="screen-session">
+      <div class="screen-inner">
+        <div class="card">
+          <div class="card-label">TEILNEHMENDE WÄHLEN</div>
+          <select id="sel-proband" class="field-select">
+            <option value="">— Teilnehmende wählen —</option>
+          </select>
+          <div class="confirm-badge hidden" id="proband-badge"></div>
+        </div>
+        <div class="card">
+          <div class="card-label-row">
+            <span class="card-label" style="margin-bottom:0">SZENARIO</span>
+            <button class="btn-text" id="btn-manage-scenarios">⚙ Verwalten</button>
+          </div>
+          <div class="scenario-grid" id="scenario-grid"></div>
+        </div>
+        <div class="card">
+          <div class="card-label-row">
+            <span class="card-label" style="margin-bottom:0">ABWEICHUNGEN &amp; ANMERKUNGEN</span>
+            <button class="btn-text" id="btn-manage-tags">⚙ Tags</button>
+          </div>
+          <div class="tag-row" id="deviation-tags"></div>
+          <textarea id="session-notes" rows="3" placeholder="Notizen…" style="margin-top:10px"></textarea>
+        </div>
+        <div class="card timer-card">
+          <div class="timer-status" id="timer-status"><span class="status-idle">Bereit</span></div>
+          <div class="timer-display" id="timer-display">00:00</div>
+          <div class="timer-meta" id="timer-meta"></div>
+          <div class="timer-btn-row">
+            <button class="btn btn-start full-width" id="btn-start">▶ Start</button>
+            <button class="btn btn-stop full-width hidden" id="btn-stop">⏹ Stopp</button>
+          </div>
+        </div>
+        <div class="card hidden" id="save-card">
+          <button class="btn btn-save full-width" id="btn-save-session">💾 Sitzung speichern</button>
+        </div>
       </div>
-    </header>
+    </section>
 
-    <!-- Page header (Desktop/Tablet) -->
-    <header class="page-header" id="page-header">
-      <h1 class="page-title" id="page-title">Teilnehmende</h1>
-      <span class="page-date" id="page-date"></span>
-    </header>
-
-    <main class="screen-container">
-
-      <!-- ── Teilnehmende ── -->
-      <section class="screen active" id="screen-probanden">
-        <div class="screen-inner">
-          <div class="search-row">
-            <input type="text" id="search-input" placeholder="🔍  Suchen…" autocomplete="off" autocorrect="off" autocapitalize="none">
-            <button class="btn-icon btn-primary" id="btn-add-proband" aria-label="Neu" title="Neue Person anlegen">+</button>
-          </div>
-          <div class="card form-card hidden" id="add-form">
-            <div class="card-label">NEUE PERSON ANLEGEN</div>
-            <div class="form-grid">
-              <div>
-                <label class="field-label" for="inp-pseudo">Pseudonym</label>
-                <input type="text" id="inp-pseudo" placeholder="z.B. P-042" autocomplete="off" autocorrect="off" autocapitalize="characters">
-              </div>
-              <div>
-                <label class="field-label" for="inp-sensor">Sensoriknummer (1–12)</label>
-                <input type="number" id="inp-sensor" placeholder="z.B. 7" min="1" max="12" inputmode="numeric">
-              </div>
-              <div class="form-grid-full">
-                <label class="field-label" for="inp-note">Notiz (optional)</label>
-                <input type="text" id="inp-note" placeholder="z.B. Linkshänder" autocorrect="off">
-              </div>
-            </div>
-            <div class="btn-row">
-              <button class="btn btn-primary flex-1" id="btn-save-proband">✓ Anlegen</button>
-              <button class="btn btn-ghost" id="btn-cancel-proband">Abbrechen</button>
-            </div>
-          </div>
-          <div class="section-label" id="proband-count-label">TEILNEHMENDE</div>
-          <div id="proband-list" class="item-list proband-grid"></div>
-          <div id="proband-empty" class="empty-state hidden">
-            <div class="empty-icon">👥</div>
-            <div class="empty-text">Noch keine Teilnehmenden angelegt</div>
-            <div class="empty-sub">Klicke auf + um eine Person hinzuzufügen</div>
-          </div>
+    <!-- ── Protokoll ── -->
+    <section class="screen" id="screen-log">
+      <div class="screen-inner">
+        <div class="filter-row">
+          <select id="log-filter-station" class="field-select small-select"><option value="all">Alle Szenarien</option></select>
+          <select id="log-filter-proband" class="field-select small-select"><option value="all">Alle Teilnehmenden</option></select>
         </div>
-      </section>
-
-      <!-- ── Sitzung ── -->
-      <section class="screen" id="screen-session">
-        <div class="screen-inner">
-          <div class="session-layout">
-            <div class="session-col-left">
-              <div class="card">
-                <div class="card-label">TEILNEHMENDE WÄHLEN</div>
-                <select id="sel-proband" class="field-select">
-                  <option value="">— Teilnehmende wählen —</option>
-                </select>
-                <div class="confirm-badge hidden" id="proband-badge"></div>
-              </div>
-              <div class="card">
-                <div class="card-label-row">
-                  <span class="card-label" style="margin-bottom:0">SZENARIO</span>
-                  <button class="btn-text" id="btn-manage-scenarios">⚙ Verwalten</button>
-                </div>
-                <div class="scenario-grid" id="scenario-grid"></div>
-              </div>
-              <div class="card">
-                <div class="card-label-row">
-                  <span class="card-label" style="margin-bottom:0">ABWEICHUNGEN &amp; ANMERKUNGEN</span>
-                  <button class="btn-text" id="btn-manage-tags">⚙ Tags</button>
-                </div>
-                <div class="tag-row" id="deviation-tags"></div>
-                <textarea id="session-notes" rows="3" placeholder="Notizen…" style="margin-top:10px"></textarea>
-              </div>
-            </div>
-            <div class="session-col-right">
-              <div class="card timer-card">
-                <div class="timer-status" id="timer-status"><span class="status-idle">Bereit</span></div>
-                <div class="timer-display" id="timer-display">00:00</div>
-                <div class="timer-meta" id="timer-meta"></div>
-                <div class="timer-btn-row">
-                  <button class="btn btn-start full-width" id="btn-start">▶ Start</button>
-                  <button class="btn btn-stop full-width hidden" id="btn-stop">⏹ Stopp</button>
-                </div>
-              </div>
-              <div class="card hidden" id="save-card">
-                <button class="btn btn-save full-width" id="btn-save-session">💾 Sitzung speichern</button>
-              </div>
-            </div>
-          </div>
+        <div class="section-label" id="log-count-label">SITZUNGEN</div>
+        <div id="log-list" class="item-list"></div>
+        <div id="log-empty" class="empty-state hidden">
+          <div class="empty-icon">📋</div>
+          <div class="empty-text">Noch keine Sitzungen gespeichert</div>
         </div>
-      </section>
+      </div>
+    </section>
 
-      <!-- ── Protokoll ── -->
-      <section class="screen" id="screen-log">
-        <div class="screen-inner">
-          <div class="filter-row">
-            <select id="log-filter-station" class="field-select small-select"><option value="all">Alle Szenarien</option></select>
-            <select id="log-filter-proband" class="field-select small-select"><option value="all">Alle Teilnehmenden</option></select>
-          </div>
-          <div class="section-label" id="log-count-label">SITZUNGEN</div>
-          <div id="log-list" class="item-list log-grid"></div>
-          <div id="log-empty" class="empty-state hidden">
-            <div class="empty-icon">📋</div>
-            <div class="empty-text">Noch keine Sitzungen gespeichert</div>
-          </div>
+    <!-- ── Export ── -->
+    <section class="screen" id="screen-export">
+      <div class="screen-inner">
+        <div class="card privacy-card">
+          <div class="card-label purple-label">🔒 DATENSCHUTZHINWEIS</div>
+          <p class="privacy-text">Daten werden <strong>ausschließlich lokal</strong> auf diesem Gerät gespeichert. Export enthält nur Pseudonyme &amp; Sensoriknummern.</p>
         </div>
-      </section>
-
-      <!-- ── Export ── -->
-      <section class="screen" id="screen-export">
-        <div class="screen-inner">
-          <div class="export-layout">
-            <div class="export-col-main">
-              <div class="card privacy-card">
-                <div class="card-label purple-label">🔒 DATENSCHUTZHINWEIS</div>
-                <p class="privacy-text">Daten werden <strong>ausschließlich lokal</strong> auf diesem Gerät gespeichert. Export enthält nur Pseudonyme &amp; Sensoriknummern.</p>
-              </div>
-              <div class="card">
-                <div class="card-label">GERÄT / BETREUUNG</div>
-                <input type="text" id="inp-device-label" placeholder="z.B. VR-Station – Max M." autocorrect="off">
-                <div class="card-label" style="margin-top:12px">SZENARIO FILTERN</div>
-                <select id="export-filter-station" class="field-select"><option value="all">Alle Szenarien</option></select>
-              </div>
-              <div class="stats-grid" id="stats-grid"></div>
-            </div>
-            <div class="export-col-side">
-              <div class="card">
-                <div class="card-label">LETZTER EXPORT</div>
-                <div id="last-export-info" class="meta-text">Noch kein Export durchgeführt</div>
-              </div>
-              <div class="btn-col">
-                <button class="btn btn-primary full-width" id="btn-export-csv">⬇ CSV exportieren</button>
-                <button class="btn btn-ghost full-width" id="btn-export-json">⬇ JSON exportieren</button>
-              </div>
-              <div class="danger-zone">
-                <button class="btn btn-danger full-width" id="btn-clear-data">⚠ Alle Daten löschen</button>
-              </div>
-            </div>
-          </div>
+        <div class="card">
+          <div class="card-label">GERÄT / BETREUUNG</div>
+          <input type="text" id="inp-device-label" placeholder="z.B. VR-Station – Max M." autocorrect="off">
+          <div class="card-label" style="margin-top:12px">SZENARIO FILTERN</div>
+          <select id="export-filter-station" class="field-select"><option value="all">Alle Szenarien</option></select>
         </div>
-      </section>
+        <div class="stats-grid" id="stats-grid"></div>
+        <div class="btn-col">
+          <button class="btn btn-primary full-width" id="btn-export-csv">⬇ CSV exportieren</button>
+          <button class="btn btn-ghost full-width" id="btn-export-json">⬇ JSON exportieren</button>
+        </div>
+        <div class="card">
+          <div class="card-label">LETZTER EXPORT</div>
+          <div id="last-export-info" class="meta-text">Noch kein Export durchgeführt</div>
+        </div>
+        <div class="danger-zone">
+          <button class="btn btn-danger full-width" id="btn-clear-data">⚠ Alle Daten löschen</button>
+        </div>
+      </div>
+    </section>
 
-    </main>
+  </main>
 
-    <!-- Bottom Nav (Mobile only) -->
-    <nav class="bottom-nav">
-      <button class="nav-btn active" data-screen="probanden"><span class="nav-icon">👤</span><span class="nav-label">Teilnehmende</span></button>
-      <button class="nav-btn" data-screen="session"><span class="nav-icon">⏺</span><span class="nav-label">Sitzung</span></button>
-      <button class="nav-btn" data-screen="log"><span class="nav-icon">☰</span><span class="nav-label">Protokoll</span></button>
-      <button class="nav-btn" data-screen="export"><span class="nav-icon">↓</span><span class="nav-label">Export</span></button>
-    </nav>
-
-  </div><!-- /main-wrapper -->
+  <nav class="bottom-nav">
+    <button class="nav-btn active" data-screen="probanden"><span class="nav-icon">👤</span><span class="nav-label">Teilnehmende</span></button>
+    <button class="nav-btn" data-screen="session"><span class="nav-icon">⏺</span><span class="nav-label">Sitzung</span></button>
+    <button class="nav-btn" data-screen="log"><span class="nav-icon">☰</span><span class="nav-label">Protokoll</span></button>
+    <button class="nav-btn" data-screen="export"><span class="nav-icon">↓</span><span class="nav-label">Export</span></button>
+  </nav>
 
   <div id="toast" class="toast hidden"></div>
 
@@ -239,9 +173,9 @@
     <div class="dialog-box wide">
       <div class="detail-header">
         <div class="dialog-title" id="detail-title">Sitzungsdetails</div>
-        <button class="btn-icon-sm" id="detail-close" aria-label="Schließen">✕</button>
+        <button class="btn-icon-sm" id="detail-close">✕</button>
       </div>
-      <div id="detail-content" class="detail-content detail-grid"></div>
+      <div id="detail-content" class="detail-content"></div>
       <div class="btn-col" style="margin-top:14px">
         <button class="btn btn-primary full-width" id="btn-edit-session">✏ Bearbeiten</button>
         <button class="btn btn-danger full-width" id="btn-delete-session">Sitzung löschen</button>
@@ -254,19 +188,13 @@
     <div class="dialog-box wide">
       <div class="detail-header">
         <div class="dialog-title">Sitzung bearbeiten</div>
-        <button class="btn-icon-sm" id="edit-close" aria-label="Schließen">✕</button>
+        <button class="btn-icon-sm" id="edit-close">✕</button>
       </div>
       <div class="edit-content">
-        <div class="edit-row-2">
-          <div>
-            <label class="field-label">Teilnehmende</label>
-            <select id="edit-proband" class="field-select"></select>
-          </div>
-          <div>
-            <label class="field-label">Szenario</label>
-            <select id="edit-scenario" class="field-select"></select>
-          </div>
-        </div>
+        <label class="field-label">Teilnehmende</label>
+        <select id="edit-proband" class="field-select"></select>
+        <label class="field-label">Szenario</label>
+        <select id="edit-scenario" class="field-select"></select>
         <div class="date-info-row" id="edit-date-info"></div>
         <div class="time-row">
           <div class="time-col">
@@ -295,19 +223,13 @@
     <div class="dialog-box wide">
       <div class="detail-header">
         <div class="dialog-title">Person bearbeiten</div>
-        <button class="btn-icon-sm" id="proband-edit-close" aria-label="Schließen">✕</button>
+        <button class="btn-icon-sm" id="proband-edit-close">✕</button>
       </div>
       <div class="edit-content">
-        <div class="edit-row-2">
-          <div>
-            <label class="field-label" for="edit-pseudo">Pseudonym</label>
-            <input type="text" id="edit-pseudo" autocomplete="off" autocorrect="off" autocapitalize="characters">
-          </div>
-          <div>
-            <label class="field-label" for="edit-sensor">Sensoriknummer (1–12)</label>
-            <input type="number" id="edit-sensor" min="1" max="12" inputmode="numeric">
-          </div>
-        </div>
+        <label class="field-label" for="edit-pseudo">Pseudonym</label>
+        <input type="text" id="edit-pseudo" autocomplete="off" autocorrect="off" autocapitalize="characters">
+        <label class="field-label" for="edit-sensor">Sensoriknummer (1–12)</label>
+        <input type="number" id="edit-sensor" min="1" max="12" inputmode="numeric">
         <label class="field-label" for="edit-note">Notiz (optional)</label>
         <input type="text" id="edit-note" autocorrect="off">
       </div>
@@ -324,36 +246,27 @@
     <div class="dialog-box wide">
       <div class="detail-header">
         <div class="dialog-title">Szenarien verwalten</div>
-        <button class="btn-icon-sm" id="scenario-close" aria-label="Schließen">✕</button>
+        <button class="btn-icon-sm" id="scenario-close">✕</button>
       </div>
       <div id="scenario-list-modal" class="detail-content"></div>
       <div class="card" style="margin-top:12px;background:var(--surface3)">
         <div class="card-label">NEUES SZENARIO</div>
-        <div class="edit-row-3">
-          <div>
-            <label class="field-label" for="new-scenario-name">Name</label>
-            <input type="text" id="new-scenario-name" placeholder="z.B. Szenario Feuer" autocorrect="off">
-          </div>
-          <div>
-            <label class="field-label" for="new-scenario-abbr">Abkürzung (2–4 Zeichen)</label>
-            <input type="text" id="new-scenario-abbr" placeholder="z.B. FE" maxlength="4" autocorrect="off" autocapitalize="characters">
-          </div>
-          <div>
-            <label class="field-label" for="new-scenario-icon">Icon (Emoji)</label>
-            <input type="text" id="new-scenario-icon" placeholder="z.B. 🔥" maxlength="2">
-          </div>
-        </div>
+        <label class="field-label" for="new-scenario-name">Name</label>
+        <input type="text" id="new-scenario-name" placeholder="z.B. Szenario Feuer" autocorrect="off">
+        <label class="field-label" for="new-scenario-abbr">Abkürzung (2–4 Zeichen)</label>
+        <input type="text" id="new-scenario-abbr" placeholder="z.B. FE" maxlength="4" autocorrect="off" autocapitalize="characters">
+        <label class="field-label" for="new-scenario-icon">Icon (Emoji)</label>
+        <input type="text" id="new-scenario-icon" placeholder="z.B. 🔥" maxlength="2">
         <button class="btn btn-primary full-width" id="btn-add-scenario" style="margin-top:10px">+ Hinzufügen</button>
       </div>
     </div>
   </div>
-
   <!-- Tag Manager -->
   <div id="tag-overlay" class="overlay hidden">
     <div class="dialog-box wide">
       <div class="detail-header">
         <div class="dialog-title">Tags verwalten</div>
-        <button class="btn-icon-sm" id="tag-close" aria-label="Schließen">✕</button>
+        <button class="btn-icon-sm" id="tag-close">✕</button>
       </div>
       <div id="tag-list-modal" class="detail-content"></div>
       <div class="card" style="margin-top:12px;background:var(--surface3)">
@@ -365,7 +278,7 @@
     </div>
   </div>
 
-</div><!-- /app -->
+</div>
 <script src="app.js"></script>
 <script>
   if ('serviceWorker' in navigator) {
