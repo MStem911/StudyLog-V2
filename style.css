@@ -206,21 +206,26 @@ body {
     color: var(--purple-lt);
     border: 1px solid var(--purple-d);
   }
-  .nav-item .nav-icon { font-size: var(--text-lg); flex-shrink: 0; }
+  .nav-item .nav-icon {
+    font-size: var(--text-lg);
+    flex-shrink: 0;
+    width: 24px;
+    text-align: center;
+  }
   .nav-item .nav-label { font-size: var(--text-md); }
 
   .sidebar-footer {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 14px 18px;
+    padding: 16px 18px;
     border-top: 1px solid var(--border);
     flex-shrink: 0;
   }
 
   .page-header {
     display: flex;
-    align-items: baseline;
+    align-items: center;
     gap: 16px;
     padding: 18px 28px 0;
     flex-shrink: 0;
@@ -325,11 +330,11 @@ body {
 }
 .card-label {
   font-size: var(--text-sm); font-weight: 700; color: var(--text3);
-  letter-spacing: 0.06em; text-transform: uppercase; margin-bottom: 10px;
+  letter-spacing: 0.06em; text-transform: uppercase; margin-bottom: 12px;
 }
 .card-label-row {
   display: flex; align-items: center; justify-content: space-between;
-  margin-bottom: 10px;
+  margin-bottom: 12px;
 }
 .purple-label { color: var(--purple-lt); }
 .form-card  { background: var(--purple-bg); border-color: var(--purple-d); }
@@ -342,7 +347,7 @@ body {
 ══════════════════════════════════════════════════════ */
 .field-label {
   display: block; font-size: var(--text-sm); color: var(--text3);
-  margin-bottom: 5px; margin-top: 8px;
+  margin-bottom: 6px; margin-top: 12px;
 }
 .field-label:first-child { margin-top: 0; }
 
