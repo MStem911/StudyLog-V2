@@ -809,7 +809,7 @@ input[type="time"] { color-scheme: dark; }
 .bew-scale {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 10px;
 }
 
 .bew-scale-btns {
@@ -820,7 +820,7 @@ input[type="time"] { color-scheme: dark; }
 
 .bew-scale-labels {
   display: flex;
-  gap: 7px;
+  gap: 14px;
 }
 
 .bew-scale-label {
@@ -833,8 +833,6 @@ input[type="time"] { color-scheme: dark; }
   flex-shrink: 0;
   transition: color 0.12s;
 }
-
-.bew-scale-label:last-child { margin-right: 0; }
 
 .bew-scale-label.active {
   color: var(--text1);
