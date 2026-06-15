@@ -807,9 +807,3 @@ button:focus:not(:focus-visible),
 input:focus:not(:focus-visible),
 select:focus:not(:focus-visible),
 textarea:focus:not(:focus-visible) { outline: none; }
-
-/* ── Sidebar install button ── */
-.sidebar-install {
-  padding: 0 10px 14px;
-  flex-shrink: 0;
-}
