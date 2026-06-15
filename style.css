@@ -813,18 +813,30 @@ input[type="time"] { color-scheme: dark; }
 }
 
 .bew-scale-btns {
-  display: grid;
-  grid-template-columns: repeat(6, 38px);
-  gap: 7px;
+  display: table;
+  table-layout: fixed;
+  width: 100%;
+  max-width: 420px;
+  border-spacing: 7px 0;
+  margin-left: -7px;
+}
+
+.bew-scale-btn-cell {
+  display: table-cell;
+  text-align: center;
 }
 
 .bew-scale-labels {
-  display: grid;
-  grid-template-columns: repeat(6, 38px);
-  gap: 7px;
+  display: table;
+  table-layout: fixed;
+  width: 100%;
+  max-width: 420px;
+  border-spacing: 7px 0;
+  margin-left: -7px;
 }
 
 .bew-scale-label {
+  display: table-cell;
   text-align: center;
   font-size: 9px;
   color: var(--text3);
@@ -924,13 +936,6 @@ input[type="time"] { color-scheme: dark; }
     width: 42px;
     height: 42px;
     font-size: 15px;
-  }
-  .bew-scale-label {
-    min-width: 42px;
-  }
-  .bew-scale-btns,
-  .bew-scale-labels {
-    grid-template-columns: repeat(6, 42px);
   }
 }
 

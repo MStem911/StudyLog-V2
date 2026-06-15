@@ -1032,7 +1032,7 @@ function renderBewScale(key) {
   container.innerHTML =
     `<div class="bew-scale-btns">` +
     [1,2,3,4,5,6].map(n =>
-      `<button class="bew-pip-btn bew-pip-${n}" data-val="${n}" aria-label="Note ${n}: ${BEW_SCALE_LABELS[n-1]}">${n}</button>`
+      `<div class="bew-scale-btn-cell"><button class="bew-pip-btn bew-pip-${n}" data-val="${n}" aria-label="Note ${n}: ${BEW_SCALE_LABELS[n-1]}">${n}</button></div>`
     ).join('') +
     `</div>` +
     `<div class="bew-scale-labels">` +
