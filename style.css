@@ -113,7 +113,7 @@ body {
 
 .screen-inner {
   padding: 14px 16px 24px;
-  display: flex; flex-direction: column; gap: 10px;
+  display: flex; flex-direction: column; gap: 16px;
   min-height: 100%;
 }
 
@@ -231,7 +231,7 @@ body {
 
   .screen-inner {
     padding: 18px 28px 32px;
-    gap: 14px;
+    gap: 20px;
   }
 }
 
@@ -242,7 +242,7 @@ body {
 .export-layout {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 16px;
 }
 
 /* ══════════════════════════════════════════════════════
@@ -252,7 +252,7 @@ body {
   :root { --sidebar-w: 240px; }
 
   .page-header { padding: 20px 32px 0; }
-  .screen-inner { padding: 20px 32px 36px; gap: 16px; }
+  .screen-inner { padding: 20px 32px 36px; gap: 24px; }
 
   /* Sitzung: two-column layout */
   .session-layout {
@@ -474,8 +474,8 @@ input[type="time"] { color-scheme: dark; }
 
 .full-width { width: 100%; }
 .flex-1 { flex: 1; }
-.btn-row { display: flex; gap: 8px; margin-top: 12px; }
-.btn-col { display: flex; flex-direction: column; gap: 8px; }
+.btn-row { display: flex; gap: 10px; margin-top: 14px; }
+.btn-col { display: flex; flex-direction: column; gap: 10px; }
 
 /* ── Search Row ── */
 .search-row { display: flex; gap: 10px; align-items: center; }
