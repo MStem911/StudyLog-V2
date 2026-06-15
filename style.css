@@ -806,10 +806,36 @@ input[type="time"] { color-scheme: dark; }
   line-height: 1.4;
 }
 
+.bew-scale-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
 .bew-scale {
   display: flex;
   gap: 7px;
   flex-wrap: wrap;
+}
+
+.bew-scale-labels {
+  display: flex;
+  gap: 7px;
+}
+
+.bew-scale-label {
+  width: 38px;
+  font-size: 9px;
+  color: var(--text3);
+  text-align: center;
+  line-height: 1.2;
+  flex-shrink: 0;
+}
+
+@media (min-width: 480px) {
+  .bew-scale-label {
+    width: 42px;
+  }
 }
 
 .bew-pip-btn {

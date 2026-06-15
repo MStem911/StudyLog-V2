@@ -1020,11 +1020,13 @@ function updateBewertungForm() {
   }
 }
 
+const BEW_SCALE_LABELS = ['sehr gut', 'gut', 'befriedigend', 'ausreichend', 'mangelhaft', 'ungenügend'];
+
 function renderBewScale(key) {
   const container = document.querySelector(`.bew-scale[data-item="${key}"]`);
   if (!container) return;
   container.innerHTML = [1,2,3,4,5,6].map(n =>
-    `<button class="bew-pip-btn bew-pip-${n}" data-val="${n}" aria-label="Note ${n}">${n}</button>`
+    `<button class="bew-pip-btn bew-pip-${n}" data-val="${n}" aria-label="Note ${n}: ${BEW_SCALE_LABELS[n-1]}">${n}</button>`
   ).join('');
   container.querySelectorAll('.bew-pip-btn').forEach(btn => {
     btn.addEventListener('click', () => {
@@ -1032,6 +1034,19 @@ function renderBewScale(key) {
       btn.classList.add('selected');
     });
   });
+  // Labels-Zeile direkt nach der Scale-Zeile einfügen (ins bew-scale-wrap)
+  const wrap = container.closest('.bew-scale-wrap');
+  if (wrap) {
+    let labelRow = wrap.querySelector('.bew-scale-labels');
+    if (!labelRow) {
+      labelRow = document.createElement('div');
+      labelRow.className = 'bew-scale-labels';
+      labelRow.innerHTML = BEW_SCALE_LABELS.map(l =>
+        `<span class="bew-scale-label">${l}</span>`
+      ).join('');
+      wrap.appendChild(labelRow);
+    }
+  }
 }
 
 function getBewScores() {
