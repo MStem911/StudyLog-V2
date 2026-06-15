@@ -820,11 +820,12 @@ input[type="time"] { color-scheme: dark; }
 
 .bew-scale-labels {
   display: flex;
+  gap: 7px;
 }
 
 .bew-scale-label {
-  width: 38px;
-  margin-right: 7px;
+  min-width: 38px;
+  width: max-content;
   text-align: center;
   font-size: 9px;
   color: var(--text3);
@@ -929,8 +930,7 @@ input[type="time"] { color-scheme: dark; }
     font-size: 15px;
   }
   .bew-scale-label {
-    width: 42px;
-    margin-right: 7px;
+    min-width: 42px;
   }
 }
 
