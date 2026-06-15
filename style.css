@@ -205,12 +205,16 @@ body {
     background: var(--purple-bg);
     color: var(--purple-lt);
     border: 1px solid var(--purple-d);
+    padding: 10px 13px;
   }
   .nav-item .nav-icon {
     font-size: var(--text-lg);
     flex-shrink: 0;
-    width: 24px;
-    text-align: center;
+    width: 28px;
+    min-width: 28px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
   }
   .nav-item .nav-label { font-size: var(--text-md); }
 
