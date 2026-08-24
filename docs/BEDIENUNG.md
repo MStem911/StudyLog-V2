@@ -66,7 +66,9 @@ auf Tablet/Desktop):
    vergeben.
 3. Optional Anmerkungen eintragen.
 4. Mit **💾 Bewertung speichern** abschließen. Erneutes Speichern für dieselbe Sitzung
-   überschreibt die vorherige Bewertung.
+   überschreibt die vorherige Bewertung. Sind noch nicht alle 19 Fragen beantwortet, fragt
+   die App vor dem Speichern nach ("Trotzdem speichern?" / "Abbrechen") — so bleibt die
+   unvollständige Bewertung nicht versehentlich als vermeintlich fertig stehen.
 
 ### 4. Sitzung im Protokoll prüfen oder korrigieren
 

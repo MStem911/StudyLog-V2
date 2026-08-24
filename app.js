@@ -3,7 +3,7 @@
 // ── App Version (Single Source of Truth) ───────────────────────────────────
 // Bei jeder inhaltlichen Änderung Patch-Version erhöhen (z.B. 2.2.1 -> 2.2.2).
 // sw.js CACHE-Name manuell synchron mitziehen, damit alte Caches invalidiert werden.
-const APP_VERSION = '2.4.0';
+const APP_VERSION = '2.4.1';
 
 document.addEventListener('DOMContentLoaded', function() {
 
@@ -1181,6 +1181,16 @@ document.getElementById('btn-save-bewertung').addEventListener('click', () => {
   const filled = Object.values(scores).filter(v => v !== null).length;
   if (filled === 0) { showToast('⚠ Mindestens eine Bewertung eingeben'); return; }
 
+  if (filled < BEW_ITEMS.length) {
+    showConfirm('Nicht vollständig ausgefüllt',
+      `Es sind erst ${filled} von ${BEW_ITEMS.length} Bewertungen eingetragen. Trotzdem speichern?`,
+      () => saveBewertung(sessionId, scores));
+  } else {
+    saveBewertung(sessionId, scores);
+  }
+});
+
+function saveBewertung(sessionId, scores) {
   const s  = sessions.find(x => x.id === sessionId);
   const sc = s ? scenarios.find(x => x.id === s.scenarioId) : null;
   const notes = document.getElementById('bew-notes').value.trim();
@@ -1210,7 +1220,7 @@ document.getElementById('btn-save-bewertung').addEventListener('click', () => {
   save();
   buildBewertungSessionSelect(); // Haken in Dropdown aktualisieren
   pendingBewertungSessionId = null;
-});
+}
 
 document.getElementById('btn-clear-bewertung').addEventListener('click', () => {
   showConfirm('Eingaben zurücksetzen',
