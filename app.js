@@ -3,7 +3,7 @@
 // ── App Version (Single Source of Truth) ───────────────────────────────────
 // Bei jeder inhaltlichen Änderung Patch-Version erhöhen (z.B. 2.2.1 -> 2.2.2).
 // sw.js CACHE-Name manuell synchron mitziehen, damit alte Caches invalidiert werden.
-const APP_VERSION = '2.3.0';
+const APP_VERSION = '2.3.1';
 
 document.addEventListener('DOMContentLoaded', function() {
 
@@ -1042,10 +1042,6 @@ function updateBewertungForm() {
           container2.querySelectorAll('.bew-pip-btn').forEach(btn => {
             btn.classList.toggle('selected', btn.dataset.val === String(val));
           });
-          const idx = val - 1;
-          container2.querySelectorAll('.bew-scale-label').forEach((l, i) => {
-            l.classList.toggle('active', i === idx);
-          });
         }
       }
     });
@@ -1061,23 +1057,17 @@ function renderBewScale(key) {
   const container = document.querySelector(`.bew-scale[data-item="${key}"]`);
   if (!container) return;
   container.innerHTML =
+    `<span class="bew-scale-endlabel bew-scale-endlabel-left">${BEW_SCALE_LABELS[0]}</span>` +
     `<div class="bew-scale-btns">` +
     [1,2,3,4,5,6].map(n =>
       `<div class="bew-scale-btn-cell"><button class="bew-pip-btn bew-pip-${n}" data-val="${n}" aria-label="Note ${n}: ${BEW_SCALE_LABELS[n-1]}">${n}</button></div>`
     ).join('') +
     `</div>` +
-    `<div class="bew-scale-labels">` +
-    BEW_SCALE_LABELS.map(l => `<span class="bew-scale-label">${l}</span>`).join('') +
-    `</div>`;
+    `<span class="bew-scale-endlabel bew-scale-endlabel-right">${BEW_SCALE_LABELS[5]}</span>`;
   container.querySelectorAll('.bew-pip-btn').forEach(btn => {
     btn.addEventListener('click', () => {
       container.querySelectorAll('.bew-pip-btn').forEach(b => b.classList.remove('selected'));
       btn.classList.add('selected');
-      // Label hervorheben
-      const idx = parseInt(btn.dataset.val, 10) - 1;
-      container.querySelectorAll('.bew-scale-label').forEach((l, i) => {
-        l.classList.toggle('active', i === idx);
-      });
     });
   });
 }
