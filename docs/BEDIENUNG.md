@@ -44,12 +44,17 @@ auf Tablet/Desktop):
 1. Im Bereich **Sitzung**: gewünschte Person im Dropdown auswählen.
 2. Passendes **Szenario** antippen (z. B. VR Welt, Verkehrsunfall, Krankenhaus).
 3. **▶ Start** drücken, sobald das Szenario beginnt — der Timer läuft.
-4. Nach Abschluss des Szenarios **⏹ Stopp** drücken.
-5. Falls während der Sitzung etwas vom geplanten Ablauf abgewichen ist: passende
+4. Falls die Sitzung unterbrochen werden muss (z. B. technische Störung, Rückfrage):
+   **⏸ Pause** drücken — der Timer friert ein. Mit **▶ Fortsetzen** läuft er weiter, ab
+   dem eingefrorenen Stand. Jede Pause wird mit genauer Start-/Endzeit und Dauer
+   protokolliert; eine Sitzung kann beliebig oft pausiert werden.
+5. Nach Abschluss des Szenarios **⏹ Stopp** drücken (auch aus einer laufenden Pause heraus
+   möglich).
+6. Falls während der Sitzung etwas vom geplanten Ablauf abgewichen ist: passende
    **Abweichungs-Tags** antippen (z. B. "Techn. Fehler") und/oder eine Freitextnotiz
    eintragen.
-6. Mit **💾 Sitzung speichern** abschließen.
-7. Danach fragt die App, ob direkt der **Trainerbewertungsbogen** für diese Sitzung
+7. Mit **💾 Sitzung speichern** abschließen.
+8. Danach fragt die App, ob direkt der **Trainerbewertungsbogen** für diese Sitzung
    ausgefüllt werden soll (siehe Schritt 3) — kann auch später über den Bereich
    **Bewertung** nachgeholt werden.
 

@@ -3,7 +3,7 @@
 // ── App Version (Single Source of Truth) ───────────────────────────────────
 // Bei jeder inhaltlichen Änderung Patch-Version erhöhen (z.B. 2.2.1 -> 2.2.2).
 // sw.js CACHE-Name manuell synchron mitziehen, damit alte Caches invalidiert werden.
-const APP_VERSION = '2.3.5';
+const APP_VERSION = '2.4.0';
 
 document.addEventListener('DOMContentLoaded', function() {
 
@@ -44,6 +44,10 @@ let timerElapsed     = 0;
 let sessionStartISO  = null;
 let sessionEndISO    = null;
 let sessionRunning   = false;
+let sessionPaused    = false;
+let pauseStart       = null;
+let pauseStartISO    = null;
+let pauses           = [];
 let detailSessionId  = null;
 let editingProbandId = null;
 let confirmCallback  = null;
@@ -431,23 +435,70 @@ function startTimer() {
   timerStart      = Date.now();
   timerElapsed    = 0;
   sessionRunning  = true;
+  sessionPaused   = false;
+  pauseStart      = null;
+  pauseStartISO   = null;
+  pauses          = [];
   sessionStartISO = new Date().toISOString();
   sessionEndISO   = null;
   document.getElementById('save-card').classList.add('hidden');
+  runTimerInterval();
+  updateTimerUI();
+}
+
+function runTimerInterval() {
   timerInterval = setInterval(() => {
     timerElapsed = Math.floor((Date.now() - timerStart) / 1000);
     document.getElementById('timer-display').textContent = formatTime(timerElapsed);
   }, 500);
+}
+
+function pauseTimer() {
+  if (!sessionRunning || sessionPaused) return;
+  clearInterval(timerInterval);
+  timerInterval = null;
+  timerElapsed  = Math.max(0, Math.floor((Date.now() - timerStart) / 1000));
+  document.getElementById('timer-display').textContent = formatTime(timerElapsed);
+  sessionPaused = true;
+  pauseStart    = Date.now();
+  pauseStartISO = new Date().toISOString();
+  updateTimerUI();
+}
+
+function resumeTimer() {
+  if (!sessionRunning || !sessionPaused) return;
+  const pauseDurationMs = Date.now() - pauseStart;
+  pauses.push({
+    startISO:   pauseStartISO,
+    endISO:     new Date().toISOString(),
+    duration_s: Math.round(pauseDurationMs / 1000)
+  });
+  timerStart    += pauseDurationMs; // schiebt den Startpunkt vor, damit die aktive Dauer die Pause ausklammert
+  sessionPaused  = false;
+  pauseStart     = null;
+  pauseStartISO  = null;
+  runTimerInterval();
   updateTimerUI();
 }
 
 function stopTimer() {
   if (!sessionRunning) return;
-  clearInterval(timerInterval);
-  timerInterval  = null;
+  if (sessionPaused) {
+    pauses.push({
+      startISO:   pauseStartISO,
+      endISO:     new Date().toISOString(),
+      duration_s: Math.round((Date.now() - pauseStart) / 1000)
+    });
+    sessionPaused = false;
+    pauseStart    = null;
+    pauseStartISO = null;
+  } else {
+    clearInterval(timerInterval);
+    timerInterval = null;
+    timerElapsed  = Math.max(0, Math.floor((Date.now() - timerStart) / 1000));
+  }
   sessionRunning = false;
   sessionEndISO  = new Date().toISOString();
-  timerElapsed   = Math.max(0, Math.floor((Date.now() - timerStart) / 1000));
   document.getElementById('save-card').classList.remove('hidden');
   updateTimerUI();
   setTimeout(() =>
@@ -455,34 +506,51 @@ function stopTimer() {
   );
 }
 
+function totalPauseSeconds(list) {
+  return list.reduce((sum, p) => sum + (p.duration_s || 0), 0);
+}
+
 function updateTimerUI() {
-  const status   = document.getElementById('timer-status');
-  const meta     = document.getElementById('timer-meta');
-  const btnStart = document.getElementById('btn-start');
-  const btnStop  = document.getElementById('btn-stop');
-  const display  = document.getElementById('timer-display');
-  if (sessionRunning) {
+  const status    = document.getElementById('timer-status');
+  const meta      = document.getElementById('timer-meta');
+  const btnStart  = document.getElementById('btn-start');
+  const btnPause  = document.getElementById('btn-pause');
+  const btnResume = document.getElementById('btn-resume');
+  const btnStop   = document.getElementById('btn-stop');
+  const display   = document.getElementById('timer-display');
+  const sc = scenarios.find(s => s.id === selectedScenId);
+  const pauseInfo = pauses.length
+    ? '  ·  Pausen: ' + pauses.length + ' (' + formatTime(totalPauseSeconds(pauses)) + ')'
+    : '';
+
+  [btnStart, btnPause, btnResume, btnStop].forEach(b => b.classList.add('hidden'));
+
+  if (sessionRunning && sessionPaused) {
+    status.innerHTML = '<span class="status-paused">⏸ PAUSIERT</span>';
+    meta.textContent = 'Pausiert seit ' + localTimeStr(pauseStartISO) + (sc ? '  ·  ' + sc.abbr : '') + pauseInfo;
+    btnResume.classList.remove('hidden');
+    btnStop.classList.remove('hidden');
+  } else if (sessionRunning) {
     status.innerHTML = '<span class="status-running">● LÄUFT</span>';
-    const sc = scenarios.find(s => s.id === selectedScenId);
-    meta.textContent = 'Start: ' + localTimeStr(sessionStartISO) + (sc ? '  ·  ' + sc.abbr : '');
-    btnStart.classList.add('hidden');
+    meta.textContent = 'Start: ' + localTimeStr(sessionStartISO) + (sc ? '  ·  ' + sc.abbr : '') + pauseInfo;
+    btnPause.classList.remove('hidden');
     btnStop.classList.remove('hidden');
   } else if (sessionEndISO) {
     status.innerHTML = '<span class="status-done">✓ Abgeschlossen</span>';
-    meta.textContent = localTimeStr(sessionStartISO) + ' → ' + localTimeStr(sessionEndISO) + '  ·  ' + formatTime(timerElapsed);
+    meta.textContent = localTimeStr(sessionStartISO) + ' → ' + localTimeStr(sessionEndISO) + '  ·  ' + formatTime(timerElapsed) + pauseInfo;
     btnStart.classList.remove('hidden');
-    btnStop.classList.add('hidden');
     display.textContent = formatTime(timerElapsed);
   } else {
     status.innerHTML = '<span class="status-idle">Bereit</span>';
     meta.textContent = '';
     display.textContent = '00:00';
     btnStart.classList.remove('hidden');
-    btnStop.classList.add('hidden');
   }
 }
 
 document.getElementById('btn-start').addEventListener('click', startTimer);
+document.getElementById('btn-pause').addEventListener('click', pauseTimer);
+document.getElementById('btn-resume').addEventListener('click', resumeTimer);
 document.getElementById('btn-stop').addEventListener('click', stopTimer);
 
 document.getElementById('btn-save-session').addEventListener('click', () => {
@@ -506,12 +574,16 @@ document.getElementById('btn-save-session').addEventListener('click', () => {
     startISO:     sessionStartISO,
     endISO:       sessionEndISO,
     duration_s:   timerElapsed,
+    pauses:          pauses.slice(),
+    pauseCount:      pauses.length,
+    pauseDuration_s: totalPauseSeconds(pauses),
     deviations, notes,
     deviceLabel:  settings.deviceLabel || '',
     createdAt:    new Date().toISOString()
   });
   save();
   sessionStartISO = null; sessionEndISO = null; timerElapsed = 0;
+  pauses = []; sessionPaused = false; pauseStart = null; pauseStartISO = null;
   document.getElementById('save-card').classList.add('hidden');
   renderTagRow('deviation-tags');
   document.getElementById('session-notes').value = '';
@@ -697,8 +769,12 @@ function renderLog() {
   }
   empty.classList.add('hidden');
   list.innerHTML = filtered.map(s => {
-    const hasDev  = s.deviations && s.deviations.length > 0;
-    const devLine = hasDev ? `<div class="log-dev">⚑  ${esc(s.deviations.join('  ·  '))}</div>` : '';
+    const hasDev    = s.deviations && s.deviations.length > 0;
+    const devLine   = hasDev ? `<div class="log-dev">⚑  ${esc(s.deviations.join('  ·  '))}</div>` : '';
+    const hasPause  = s.pauseCount > 0;
+    const pauseLine = hasPause
+      ? `<div class="log-pause">⏸  ${s.pauseCount} Pause${s.pauseCount !== 1 ? 'n' : ''} · ${esc(formatTime(s.pauseDuration_s || 0))}</div>`
+      : '';
     const sc   = scenarios.find(x => x.id === s.scenarioId);
     const icon = sc ? sc.icon + ' ' : '';
     const abbr = s.scenarioAbbr || s.scenarioName || '?';
@@ -709,6 +785,7 @@ function renderLog() {
       </div>
       <div class="log-meta">${esc(s.date)}  ·  Dauer: ${esc(formatTime(s.duration_s || 0))}</div>
       ${devLine}
+      ${pauseLine}
     </button>`;
   }).join('');
   list.querySelectorAll('.log-entry').forEach(el =>
@@ -726,18 +803,30 @@ function openSessionDetail(id) {
   detailSessionId = id;
   const sc = scenarios.find(x => x.id === s.scenarioId);
   document.getElementById('detail-title').textContent = s.pseudo + '  ·  ' + (sc ? sc.abbr : s.scenarioAbbr || '?');
-  document.getElementById('detail-content').innerHTML = [
+  const rows = [
     ['Datum',          s.date],
     ['Pseudonym',      s.pseudo],
     ['Sensoriknummer', s.sensor],
     ['Szenario',       (sc ? sc.icon + ' ' : '') + (sc ? sc.name : s.scenarioName || '?')],
     ['Start',          localTimeStr(s.startISO)],
     ['Ende',           localTimeStr(s.endISO)],
-    ['Dauer',          formatTime(s.duration_s || 0)],
+    ['Aktive Dauer',   formatTime(s.duration_s || 0) + ' (ohne Pausen)'],
+  ];
+  if (s.pauseCount) {
+    rows.push(['Pausen', s.pauseCount + ' · Gesamt ' + formatTime(s.pauseDuration_s || 0)]);
+    rows.push(['Pausenzeiten', s.pauses.map(p =>
+      localTimeStr(p.startISO) + '–' + localTimeStr(p.endISO) + ' (' + formatTime(p.duration_s || 0) + ')'
+    ).join('; ')]);
+  } else {
+    rows.push(['Pausen', '—']);
+  }
+  rows.push(
     ['Abweichungen',   s.deviations?.length ? s.deviations.join(', ') : '—'],
     ['Anmerkungen',    s.notes || '—'],
     ['Gerät/Betreuung',s.deviceLabel || '—'],
-  ].map(([k,v]) => `<div class="detail-row"><div class="detail-key">${esc(k)}</div><div class="detail-val">${esc(v)}</div></div>`).join('');
+  );
+  document.getElementById('detail-content').innerHTML = rows
+    .map(([k,v]) => `<div class="detail-row"><div class="detail-key">${esc(k)}</div><div class="detail-val">${esc(v)}</div></div>`).join('');
   document.getElementById('detail-overlay').classList.remove('hidden');
 }
 
@@ -891,7 +980,8 @@ document.getElementById('btn-export-csv').addEventListener('click', () => {
   if (!data.length) { showToast('⚠ Keine Daten'); return; }
   const hdr = ['ID','Datum','Pseudonym','Sensoriknummer','Szenario','Szenario_Abkuerzung',
                 'Start_ISO','Ende_ISO','Start_Uhrzeit','Ende_Uhrzeit',
-                'Dauer_s','Dauer_mm_ss','Abweichungen','Anmerkungen','Geraet_Betreuung',
+                'Dauer_s','Dauer_mm_ss','Pausen_Anzahl','Pausen_Dauer_s','Pausen_Detail',
+                'Abweichungen','Anmerkungen','Geraet_Betreuung',
                 'Bew_A1','Bew_A2','Bew_A3','Bew_A4',
                 'Bew_B5','Bew_B6','Bew_B7','Bew_B8',
                 'Bew_C9','Bew_C10','Bew_D11','Bew_D12',
@@ -907,6 +997,8 @@ document.getElementById('btn-export-csv').addEventListener('click', () => {
       s.startISO, s.endISO,
       localTimeStr(s.startISO), localTimeStr(s.endISO),
       s.duration_s||0, formatTime(s.duration_s||0),
+      s.pauseCount||0, s.pauseDuration_s||0,
+      (s.pauses||[]).map(p => localTimeStr(p.startISO)+'-'+localTimeStr(p.endISO)+' ('+formatTime(p.duration_s||0)+')').join('; '),
       (s.deviations||[]).join('; '), s.notes||'', s.deviceLabel||'',
       sc.a1??'', sc.a2??'', sc.a3??'', sc.a4??'',
       sc.b5??'', sc.b6??'', sc.b7??'', sc.b8??'',

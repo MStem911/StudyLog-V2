@@ -72,11 +72,23 @@ Schema-Versionierung** von `localStorage`-Daten; neue Felder müssen daher stets
 | Key | State-Variable | Datensatz-Form (wichtigste Felder) |
 |---|---|---|
 | `sl_probanden` | `probanden` | `{ id, pseudo, sensor, note, sensorAngelegtISO, sensorAbgelegtISO, createdAt }` |
-| `sl_sessions` | `sessions` | `{ id, probandId, pseudo, sensor, scenarioId, scenarioName, scenarioAbbr, date, startISO, endISO, duration_s, deviations[], notes, deviceLabel, createdAt, editedAt? }` |
+| `sl_sessions` | `sessions` | `{ id, probandId, pseudo, sensor, scenarioId, scenarioName, scenarioAbbr, date, startISO, endISO, duration_s, pauses[], pauseCount, pauseDuration_s, deviations[], notes, deviceLabel, createdAt, editedAt? }` |
 | `sl_bewertungen` | `bewertungen` | `{ id, sessionId, pseudo, sensor, scenarioId, scenarioName, scenarioAbbr, date, scores: { a1..z20 }, notes, savedAt }` |
 | `sl_scenarios` | `scenarios` | `{ id, name, abbr, icon }` — Default: VR Welt / Verkehrsunfall / Krankenhaus |
 | `sl_tags` | `tags` | `string[]` — freie Liste von Abweichungs-Bezeichnungen |
 | `sl_settings` | `settings` | `{ deviceLabel, lastExport }` |
+
+**Pausen-Timer (`pauses[]`):** Jeder Eintrag hat die Form `{ startISO, endISO, duration_s }`.
+`duration_s` auf Sitzungsebene ist die **aktive Dauer ohne Pausen** — der Timer wird beim
+Pausieren eingefroren und beim Fortsetzen exakt an der eingefrorenen Stelle fortgesetzt
+(implementiert, indem `timerStart` beim Fortsetzen um die Pausendauer nach vorne verschoben
+wird, siehe `resumeTimer()` in `app.js`). `pauseCount`/`pauseDuration_s` sind reine
+Bequemlichkeitsfelder (Anzahl bzw. Summe von `pauses[].duration_s`) für Log-Liste und
+CSV-Export. Wird eine Sitzung während einer laufenden Pause gestoppt, wird die offene Pause
+beim Stoppen automatisch geschlossen (kein hängender/undokumentierter Zeitraum). Die manuelle
+Sitzungs-Bearbeitung (`btn-save-edit`) rechnet `duration_s` bei geänderter Start-/Endzeit
+weiterhin als rohe Differenz `endISO - startISO` neu — `pauses[]` wird dabei nicht
+nachjustiert; das ist ein bekannter Randfall, kein Bug.
 
 Beachte: `sessions`- und `bewertungen`-Einträge speichern `pseudo`/`sensor`/`scenarioName`
 **redundant als Kopie** zum Zeitpunkt der Erstellung (statt nur eine `probandId`/`scenarioId`-
@@ -98,7 +110,7 @@ Anlegen/Löschen/Reihenfolge ändern, kein Umbenennen bestehender Szenarien).
 | Confirm Dialog | 144–159 | Generischer Bestätigungsdialog (`showConfirm`), von mehreren Lösch-Aktionen wiederverwendet |
 | Navigation | 161–208 | `showScreen()` (Screen-Wechsel + Re-Render des Zielscreens), Nav-Button-Listener |
 | TEILNEHMENDE | 210–353 | Liste rendern/filtern, Anlegen, Bearbeiten, Löschen von Personen |
-| SESSION | 355–660 | Szenario-Auswahl, Teilnehmenden-Auswahl, Start/Stopp-Timer, Tag-Zeilen, Sitzung speichern, Szenario-/Tag-Manager (CRUD für Konfiguration) |
+| SESSION | 355–~700 | Szenario-Auswahl, Teilnehmenden-Auswahl, Start/Pause/Fortsetzen/Stopp-Timer (`startTimer`, `pauseTimer`, `resumeTimer`, `stopTimer`), Tag-Zeilen, Sitzung speichern, Szenario-/Tag-Manager (CRUD für Konfiguration) |
 | LOG | 662–847 | Sitzungsliste mit Filtern, Detailansicht, Bearbeiten, Löschen |
 | EXPORT | 849–954 | Statistiken, CSV-/JSON-Export, Geräte-Label, "Alle Daten löschen" |
 | BEWERTUNGSBOGEN | 956–1140 | Post-Session-Prompt, Sitzungsauswahl, 19 Bewertungsskalen (1–6), Speichern/Überschreiben |
@@ -173,6 +185,10 @@ die CSV-Exportspalten (`app.js`, `btn-export-csv`-Handler).
   Änderung dieses Bereichs erfordert Anpassung an beiden Stellen.
 - Löschen einzelner Teilnehmender/Sitzungen entfernt keine verknüpften Datensätze in anderen
   Tabellen (siehe [DATENFLUSS.md](./DATENFLUSS.md) für die Datenschutz-Implikation).
+- Manuelles Bearbeiten von Start-/Endzeit einer Sitzung (`btn-save-edit`) rechnet
+  `duration_s` neu als rohe Differenz, ohne `pauses[]` zu berücksichtigen — bei Sitzungen
+  mit Pausen kann `duration_s` nach einer manuellen Zeitkorrektur von der Summe
+  aktive Zeit + Pausenzeit abweichen.
 - Zwei vermutliche Backup-/Debug-Dateien im Repo-Root (`debug.html`, `download`, siehe oben)
   sind nicht Teil der App und sollten bei größerer Aufräumarbeit hinterfragt, aber nicht
   ungefragt gelöscht werden.

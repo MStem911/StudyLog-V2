@@ -28,7 +28,7 @@ flowchart LR
     subgraph Input["Erfassung (UI-Eingabe durch Studienleitung)"]
         I1["Pseudonym + Sensoriknummer (1–12)<br/>+ optionale Notiz"]
         I2["Sensorik angelegt/abgelegt<br/>(manuell erfasste Uhrzeit)"]
-        I3["Szenario-Auswahl + Start/Stopp-Zeitstempel<br/>(Gerätezeit)"]
+        I3["Szenario-Auswahl + Start/Pause/Stopp-Zeitstempel<br/>(Gerätezeit)"]
         I4["Abweichungs-Tags + Freitextnotizen<br/>pro Sitzung"]
         I5["Trainerbewertungsbogen<br/>(19 Skalenwerte 1–6 + Freitext)"]
         I6["Geräte-/Betreuungslabel (Freitext)"]
@@ -89,7 +89,7 @@ Gespeichert wird in sechs getrennten `localStorage`-Einträgen (Keys `sl_proband
 | Datentyp | Felder (Auszug) | Zweck | Rechtsgrundlage | Speicherort | Aufbewahrungsdauer | Verantwortlichkeit |
 |---|---|---|---|---|---|---|
 | **Teilnehmenden-Stammdaten** (`sl_probanden`) | Pseudonym, Sensoriknummer (1–12), optionale Freitextnotiz, Zeitpunkt Sensorik an-/abgelegt, Erstellungszeitpunkt | Zuordnung von Sitzungen zu Testpersonen ohne Klarnamen | TODO: Datenschutz prüfen | `localStorage`, lokal auf dem jeweiligen Gerät | Unbegrenzt, bis manuelle Löschung (einzeln oder "Alle Daten löschen") | Jeweilige Studienleitung / Gerätebesitzer:in |
-| **Sitzungsprotokolle** (`sl_sessions`) | Verweis auf Teilnehmende:n (Pseudonym+Sensoriknummer als Kopie), gewähltes Szenario, Start-/Endzeitpunkt (ISO 8601), Dauer, Abweichungs-Tags, Freitextnotizen, Gerätelabel | Nachvollziehbarkeit des Sitzungsablaufs, Basis für Auswertung/Export | TODO: Datenschutz prüfen | `localStorage`, lokal | Unbegrenzt, bis manuelle Löschung | Jeweilige Studienleitung / Gerätebesitzer:in |
+| **Sitzungsprotokolle** (`sl_sessions`) | Verweis auf Teilnehmende:n (Pseudonym+Sensoriknummer als Kopie), gewähltes Szenario, Start-/Endzeitpunkt (ISO 8601), aktive Dauer, Pausen (je Start-/Endzeitpunkt + Dauer, beliebig oft pro Sitzung), Abweichungs-Tags, Freitextnotizen, Gerätelabel | Nachvollziehbarkeit des Sitzungsablaufs inkl. Unterbrechungen, Basis für Auswertung/Export | TODO: Datenschutz prüfen | `localStorage`, lokal | Unbegrenzt, bis manuelle Löschung | Jeweilige Studienleitung / Gerätebesitzer:in |
 | **Trainerbewertungsbogen** (`sl_bewertungen`) | Verweis auf Sitzung, 19 Skalenwerte (Schulnoten-Skala 1–6) zu Leistungsdimensionen (u. a. Lageerkundung, Entscheidungsqualität, Führung/Kommunikation, MANV-Erkennung), Freitextanmerkungen | Strukturierte Leistungsbewertung der Teilnehmenden im Szenario | TODO: Datenschutz prüfen — Bewertungsdaten zu einer identifizierbaren (wenn auch pseudonymisierten) Person können besonders schutzwürdig sein | `localStorage`, lokal | Unbegrenzt, bis manuelle Löschung | Jeweilige Studienleitung / Gerätebesitzer:in |
 | **Sensorik-Zeiten** (Teil von `sl_probanden`) | Uhrzeit "Sensorik angelegt" / "Sensorik abgelegt" (manuell erfasst, **keine** Rohsensordaten) | Dokumentation des Sensorhandlings im Studienablauf | TODO: Datenschutz prüfen | `localStorage`, lokal | Unbegrenzt, bis manuelle Löschung | Jeweilige Studienleitung / Gerätebesitzer:in |
 | **Szenario- & Tag-Konfiguration** (`sl_scenarios`, `sl_tags`) | Name/Abkürzung/Icon der Szenarien, Liste möglicher Abweichungs-Tags | App-Konfiguration, keine Personenbezug | Nicht personenbezogen | `localStorage`, lokal | Unbegrenzt (wird von "Alle Daten löschen" **nicht** erfasst) | Jeweilige Studienleitung / Gerätebesitzer:in |

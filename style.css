@@ -448,6 +448,8 @@ input[type="time"] { color-scheme: dark; }
 .btn-start:hover { background: #6058d0; }
 .btn-stop    { background: var(--coral-bg); border-color: var(--coral); color: var(--coral-txt); font-size: var(--text-md); padding: 14px; }
 .btn-stop:hover { background: #5a2820; }
+.btn-pause   { background: var(--amber-bg); border-color: var(--amber); color: var(--amber-txt); font-size: var(--text-md); padding: 14px; }
+.btn-pause:hover { background: #5a4318; }
 .btn-save    { background: var(--teal-bg); border-color: var(--teal); color: var(--teal-txt); }
 .btn-save:hover { background: #1d4e49; }
 .btn-danger  { background: var(--coral-bg); border-color: var(--coral); color: var(--coral-txt); }
@@ -600,6 +602,7 @@ input[type="time"] { color-scheme: dark; }
 .log-time { font-size: var(--text-sm); color: var(--text2); white-space: nowrap; flex-shrink: 0; }
 .log-meta { font-size: var(--text-sm); color: var(--text2); margin-top: 2px; }
 .log-dev  { font-size: var(--text-sm); color: var(--coral-txt); margin-top: 4px; }
+.log-pause { font-size: var(--text-sm); color: var(--amber-txt); margin-top: 4px; }
 
 /* ── Confirm badge ── */
 .confirm-badge {
@@ -613,6 +616,7 @@ input[type="time"] { color-scheme: dark; }
 .timer-status { margin-bottom: 6px; font-size: var(--text-sm); font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; }
 .status-idle    { color: var(--text3); }
 .status-running { color: var(--coral-txt); }
+.status-paused  { color: var(--amber-txt); }
 .status-done    { color: var(--teal-txt); }
 .timer-display {
   font-size: 54px; font-weight: 700; letter-spacing: -1px;
