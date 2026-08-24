@@ -58,6 +58,10 @@ auf Tablet/Desktop):
    ausgefüllt werden soll (siehe Schritt 3) — kann auch später über den Bereich
    **Bewertung** nachgeholt werden.
 
+**Wichtig:** Wird nach dem Stoppen erneut **▶ Start** gedrückt, ohne vorher zu speichern,
+fragt die App zur Sicherheit nach ("Aufzeichnung verwerfen?"), bevor die noch nicht
+gespeicherte Aufzeichnung durch die neue Sitzung überschrieben wird.
+
 ### 3. Trainerbewertungsbogen ausfüllen (optional, pro Sitzung)
 
 1. Im Bereich **Bewertung** die gewünschte Sitzung im Dropdown auswählen (bereits bewertete

@@ -3,7 +3,7 @@
 // ── App Version (Single Source of Truth) ───────────────────────────────────
 // Bei jeder inhaltlichen Änderung Patch-Version erhöhen (z.B. 2.2.1 -> 2.2.2).
 // sw.js CACHE-Name manuell synchron mitziehen, damit alte Caches invalidiert werden.
-const APP_VERSION = '2.4.1';
+const APP_VERSION = '2.4.2';
 
 document.addEventListener('DOMContentLoaded', function() {
 
@@ -430,6 +430,17 @@ function getActiveTags(containerId) {
 // ── Timer ─────────────────────────────────────────────────────────────────────
 function startTimer() {
   if (sessionRunning) return;
+  if (sessionEndISO) {
+    // Es liegt eine gestoppte, aber noch nicht gespeicherte Aufzeichnung vor
+    showConfirm('Aufzeichnung verwerfen?',
+      'Die letzte Aufzeichnung wurde noch nicht gespeichert. Wenn du jetzt eine neue Sitzung startest, geht sie unwiderruflich verloren. Trotzdem verwerfen und neu starten?',
+      () => beginTimer());
+    return;
+  }
+  beginTimer();
+}
+
+function beginTimer() {
   if (!document.getElementById('sel-proband').value) { showToast('⚠ Teilnehmende wählen'); return; }
   if (!selectedScenId) { showToast('⚠ Szenario wählen'); return; }
   timerStart      = Date.now();
