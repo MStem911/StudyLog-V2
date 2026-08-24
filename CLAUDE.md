@@ -1,10 +1,9 @@
 # StudyLog-V2 — Projektkontext für Claude
 
 ## Was ist das
-Progressive Web App für Maike (wiss. Mitarbeiterin, Universität der Bundeswehr München) zur
-Durchführung von Studien-Sessions mit Teilnehmenden in VR-Szenarien (VR Welt, Verkehrsunfall,
-Krankenhaus). Mehrere Studienleitungen nutzen die App gleichzeitig auf eigenen Smartphones,
-vollständig offline. Deployment: GitHub Pages (`mstem911.github.io/StudyLog-V2`).
+Progressive Web App zur Durchführung von Studien-Sessions mit Teilnehmenden in VR-Szenarien
+(VR Welt, Verkehrsunfall, Krankenhaus). Mehrere Studienleitungen nutzen die App gleichzeitig auf
+eigenen Smartphones, vollständig offline. Deployment: GitHub Pages.
 
 ## Tech-Stack
 Vanilla HTML/CSS/JS, kein Build-Schritt, keine Frameworks/Dependencies. Datenhaltung
@@ -31,7 +30,7 @@ Single Source of Truth: `const APP_VERSION` ganz oben in `app.js`.
 
 Bei **jedem Commit, der Funktionalität/Inhalt ändert** (nicht bei reinen Doku-Änderungen):
 1. `APP_VERSION` in `app.js` hochzählen — Patch (`2.2.1` → `2.2.2`) für Bugfixes/kleine
-   Änderungen, Minor (`2.2.x` → `2.3.0`) für neue Features, Major nur nach Absprache mit Maike.
+   Änderungen, Minor (`2.2.x` → `2.3.0`) für neue Features, Major nur nach expliziter Absprache.
 2. `CACHE`-Konstante in `sw.js` synchron auf denselben Wert setzen (z.B.
    `studylog-v2.2.2`) — erzwingt Invalidierung des alten Service-Worker-Caches.
 3. Die statischen `<span class="app-version">` Platzhalter in `index.html` (aktuell 2x:
@@ -55,5 +54,18 @@ Bei **jedem Commit, der Funktionalität/Inhalt ändert** (nicht bei reinen Doku-
 Der verbundene Ordner läuft über eine Sandbox-Bridge, die zwar Dateien schreiben, aber keine
 Dateien löschen/umbenennen kann — `git commit`/`git push` funktionieren darüber **nicht
 zuverlässig** (Lock-Dateien bleiben hängen). Deshalb: Claude bearbeitet Dateien direkt
-(Edit/Write), Commit + Push führt Maike selbst in SourceTree oder Git Bash aus. Claude schlägt
-dazu jeweils eine Commit-Message vor.
+(Edit/Write), Commit + Push erfolgt lokal in SourceTree oder Git Bash. Claude schlägt dazu
+jeweils eine Commit-Message vor.
+
+## Datenschutz für Projektdateien selbst
+Keine personenbezogenen Daten (Namen, Arbeitgeber o.ä.) in Code-Kommentare, Doku-Dateien,
+Commit-Messages oder sonstige Texte schreiben, die Claude erstellt oder bearbeitet.
+
+## Technische Dokumentation (`/docs`)
+Es existiert eine ausführliche technische Dokumentation unter `/docs`
+(`OVERVIEW.md`, `DATENFLUSS.md`, `BEDIENUNG.md`, `ARCHITECTURE.md`) — u.a. Grundlage für eine
+Datenschutz-Bewertung (DSGVO/DSFA) und für neue Entwickler:innen/KI-Modelle ohne Chatverlauf.
+**Bei jeder Code-Änderung, die Datenerfassung, -speicherung, -übertragung, Architektur oder
+Bedienung betrifft, die passende(n) Datei(en) in `/docs` automatisch mitaktualisieren** —
+ohne dass extra danach gefragt werden muss. Unklare Datenschutz-Aspekte in `DATENFLUSS.md`
+weiterhin mit "TODO: Datenschutz prüfen" markieren.

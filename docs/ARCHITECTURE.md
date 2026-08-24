@@ -1,0 +1,200 @@
+# StudyLog-V2 — Architektur (für Entwickler:innen & KI-Modelle)
+
+> Diese Datei ist so geschrieben, dass ein neues Modell **ohne vorherigen Chatverlauf**
+> allein daraus produktiv am Projekt weiterarbeiten kann. Für Kontext zu Zweck/Zielgruppe
+> siehe [OVERVIEW.md](./OVERVIEW.md), für Datenschutz-Details [DATENFLUSS.md](./DATENFLUSS.md).
+> **Verbindliche Arbeitsregeln für Änderungen an diesem Projekt stehen in `/CLAUDE.md`
+> im Repo-Root — unbedingt vorher lesen** (u. a. Strict-Non-Regression, minimale Diffs,
+> Versionierungspflicht bei jeder inhaltlichen Änderung).
+
+## Ordnerstruktur
+
+```
+StudyLog-V2/
+├── index.html          # App-Shell: alle Screens + Overlays als statisches Markup
+├── style.css            # Gesamtes Styling (Dark-Mode, responsives Layout)
+├── app.js                # Gesamte Anwendungslogik (einzige JS-Datei der ausgelieferten App)
+├── sw.js                 # Service Worker für Offline-Fähigkeit
+├── manifest.json          # PWA-Manifest
+├── icons/
+│   ├── icon-192.png
+│   └── icon-512.png
+├── README.md              # Kurzüberblick, Deployment-Anleitung
+├── CLAUDE.md               # Verbindliche Arbeitsregeln für Änderungen an diesem Projekt
+└── docs/                    # Diese Dokumentation
+    ├── OVERVIEW.md
+    ├── DATENFLUSS.md
+    ├── BEDIENUNG.md
+    └── ARCHITECTURE.md
+```
+
+**Nicht Teil der ausgelieferten/deployten App** (von `index.html`/`sw.js` nicht referenziert):
+`debug.html` und `download` im Repo-Root sind ältere, textuelle Kopien einer früheren
+`app.js`-Version (ohne die Bewertungsbogen-Funktion) — vermutlich Debug-/Backup-Artefakte.
+Sie werden von `sw.js` nicht gecacht und von `index.html` nicht eingebunden. Vor dem
+Löschen/Ändern dieser Dateien Rücksprache halten, da unklar ist, ob sie noch als Referenz
+gebraucht werden (siehe Arbeitsregel "Root Cause statt Symptom-Fix" / "nicht ungefragt
+löschen" in `CLAUDE.md`). Ebenso `icon-512 (1).png` im Root ist vermutlich ein Duplikat von
+`icons/icon-512.png` und nicht Teil des aktiven Manifests.
+
+## Laufzeitmodell
+
+Es gibt **keinen Build-Schritt**. `index.html` lädt `style.css` und `app.js` direkt per
+`<link>`/`<script>`-Tag; alle Dateien werden unverändert per GitHub Pages ausgeliefert.
+`app.js` ist komplett in einen `DOMContentLoaded`-Listener gewrappt (Pflicht laut
+`CLAUDE.md` — verhindert bekannte iOS-PWA-Button-Bugs). Alle Funktionen, State-Variablen und
+Event-Listener leben in diesem einen Closure-Scope; es gibt keine Module/Imports.
+
+## Kernkonzept: State + Persistenz
+
+`app.js` hält den gesamten Anwendungszustand in modul-lokalen `let`-Variablen (z. B.
+`probanden`, `sessions`, `scenarios`, `tags`, `bewertungen`, `settings` sowie
+UI-/Timer-State wie `sessionRunning`, `selectedScenId`, `detailSessionId`). Zwei zentrale
+Funktionen synchronisieren diesen State mit `localStorage`:
+
+- **`load()`** — beim Start einmal aufgerufen (`app.js:1143`), liest alle sechs
+  `localStorage`-Keys, parsed JSON, füllt fehlende/leere Konfigurationslisten
+  (`scenarios`, `tags`) mit Defaults auf.
+- **`save()`** — nach **jeder** datenverändernden Aktion aufgerufen, schreibt alle sechs
+  State-Variablen zurück in `localStorage`. Kein Debouncing/Batching — jede einzelne
+  Aktion (Person anlegen, Sitzung speichern, Tag umbenennen …) löst einen vollständigen
+  `save()`-Durchlauf aus.
+
+**Wichtig für Änderungen:** Da `save()` immer alle sechs Keys neu schreibt, reicht es bei
+neuen Feldern, die betroffene State-Variable (z. B. ein Objekt in `probanden`) zu ergänzen —
+es muss keine Migration/Schema-Version gepflegt werden. Es gibt **keine
+Schema-Versionierung** von `localStorage`-Daten; neue Felder müssen daher stets mit
+`undefined`/`null`-Fallbacks für Alt-Daten umgehen können (siehe z. B. `p.sensorAngelegtISO
+|| p.createdAt` in `app.js:323`).
+
+### `localStorage`-Keys und Datenmodelle
+
+| Key | State-Variable | Datensatz-Form (wichtigste Felder) |
+|---|---|---|
+| `sl_probanden` | `probanden` | `{ id, pseudo, sensor, note, sensorAngelegtISO, sensorAbgelegtISO, createdAt }` |
+| `sl_sessions` | `sessions` | `{ id, probandId, pseudo, sensor, scenarioId, scenarioName, scenarioAbbr, date, startISO, endISO, duration_s, deviations[], notes, deviceLabel, createdAt, editedAt? }` |
+| `sl_bewertungen` | `bewertungen` | `{ id, sessionId, pseudo, sensor, scenarioId, scenarioName, scenarioAbbr, date, scores: { a1..z20 }, notes, savedAt }` |
+| `sl_scenarios` | `scenarios` | `{ id, name, abbr, icon }` — Default: VR Welt / Verkehrsunfall / Krankenhaus |
+| `sl_tags` | `tags` | `string[]` — freie Liste von Abweichungs-Bezeichnungen |
+| `sl_settings` | `settings` | `{ deviceLabel, lastExport }` |
+
+Beachte: `sessions`- und `bewertungen`-Einträge speichern `pseudo`/`sensor`/`scenarioName`
+**redundant als Kopie** zum Zeitpunkt der Erstellung (statt nur eine `probandId`/`scenarioId`-
+Referenz zu halten). Das ist bewusst so gebaut, damit Protokolle auch nach Löschen einer
+Person oder eines Szenarios noch lesbar bleiben — hat aber zur Folge, dass ein nachträgliches
+Umbenennen eines Szenarios bestehende Sitzungen **nicht** rückwirkend aktualisiert (bei
+Personen-Umbenennung dagegen schon, siehe `btn-save-proband-edit`-Handler in `app.js:308`,
+der `sessions` aktiv nachzieht). TODO: bei künftigen Änderungen an Szenario-Edit-Funktion
+beachten, falls eine Bearbeitungsmöglichkeit für Szenarien ergänzt wird (aktuell gibt es nur
+Anlegen/Löschen/Reihenfolge ändern, kein Umbenennen bestehender Szenarien).
+
+## Modul-Verantwortlichkeiten in `app.js` (in Dateireihenfolge)
+
+| Abschnitt (Kommentar-Marker im Code) | Zeilen (ca.) | Verantwortlichkeit |
+|---|---|---|
+| App Version / Storage Keys / Defaults | 1–50 | Versions-Konstante, `localStorage`-Keys, Default-Szenarien/Tags, State-Deklaration |
+| Persistence | 52–90 | `save()`, `load()` |
+| Utilities | 86–142 | `uid()`, Datum/Zeit-Formatierung (`formatTime`, `localTimeStr`, `isoToTimeInput`, `rebuildISO`), `esc()` (HTML-Escaping gegen XSS beim Rendern von Nutzereingaben), `showToast()` |
+| Confirm Dialog | 144–159 | Generischer Bestätigungsdialog (`showConfirm`), von mehreren Lösch-Aktionen wiederverwendet |
+| Navigation | 161–208 | `showScreen()` (Screen-Wechsel + Re-Render des Zielscreens), Nav-Button-Listener |
+| TEILNEHMENDE | 210–353 | Liste rendern/filtern, Anlegen, Bearbeiten, Löschen von Personen |
+| SESSION | 355–660 | Szenario-Auswahl, Teilnehmenden-Auswahl, Start/Stopp-Timer, Tag-Zeilen, Sitzung speichern, Szenario-/Tag-Manager (CRUD für Konfiguration) |
+| LOG | 662–847 | Sitzungsliste mit Filtern, Detailansicht, Bearbeiten, Löschen |
+| EXPORT | 849–954 | Statistiken, CSV-/JSON-Export, Geräte-Label, "Alle Daten löschen" |
+| BEWERTUNGSBOGEN | 956–1140 | Post-Session-Prompt, Sitzungsauswahl, 19 Bewertungsskalen (1–6), Speichern/Überschreiben |
+| INIT | 1142–1155 | Startsequenz: `load()`, initiales Rendering aller Screens, Versionsanzeige |
+
+## Konventionen im Code
+
+- **XSS-Schutz:** Jeder aus State/Nutzereingabe gerenderte Text durchläuft `esc()` vor dem
+  Einfügen in `innerHTML`. Bei neuem Rendering-Code diese Konvention beibehalten.
+- **IDs:** `uid()` erzeugt Client-seitige IDs aus Zeitstempel + Zufallsstring (kein UUID-Format,
+  aber kollisionsarm genug für den Einzelgeräte-Kontext dieser App).
+- **Bestätigung vor destruktiven Aktionen:** Löschaktionen laufen immer über `showConfirm()`,
+  nie über direktes Löschen beim Klick.
+- **Delete-Bug-Muster (siehe `CLAUDE.md`):** IDs werden vor dem Zurücksetzen von
+  `editingProbandId`/`detailSessionId` in eine lokale `const` zwischengespeichert, damit der
+  `showConfirm`-Callback (asynchron ausgeführt) noch die richtige ID kennt.
+- **`.hidden`-Klasse:** Muss laut `style.css` `display: none !important` sein (nicht
+  `opacity:0`), sonst blockieren unsichtbare Elemente Klicks — siehe bekannte Bugs in
+  `CLAUDE.md`.
+
+## Service Worker (`sw.js`)
+
+- Cache-Name `CACHE` ist an `APP_VERSION` aus `app.js` gekoppelt (manuell synchron zu halten,
+  siehe Versionierungsregel in `CLAUDE.md`) — ändert sich die Versionsnummer, wird beim
+  nächsten Laden der alte Cache automatisch gelöscht (`activate`-Handler).
+- Strategie: **Cache-first mit Network-Fallback** — gecachte Antwort wird bevorzugt
+  ausgeliefert; bei Cache-Miss wird das Netzwerk versucht und die Antwort zusätzlich in den
+  Cache geschrieben; schlägt auch das fehl (offline + nicht gecacht), wird `index.html` als
+  Fallback ausgeliefert (SPA-artiges Verhalten für Navigation).
+- `sw.js` selbst ist **nicht** in der `ASSETS`-Liste enthalten (bewusst — verhindert laut
+  `CLAUDE.md` einen bekannten Service-Worker-Deadlock).
+- Nur `GET`-Requests werden behandelt; alles andere wird an den Browser durchgereicht.
+
+## Rendering-Modell
+
+Kein Virtual DOM, kein Reaktivitäts-Framework. Jede `render*()`-Funktion (z. B.
+`renderProbanden()`, `renderLog()`, `renderBewertungScreen()`) baut den relevanten
+DOM-Ausschnitt bei jedem Aufruf komplett neu aus dem aktuellen State via
+Template-Strings + `innerHTML` auf und hängt anschließend Event-Listener an die neu
+erzeugten Elemente. Es gibt keinen Diffing-Mechanismus — nach jeder State-Änderung muss die
+betroffene `render*()`-Funktion explizit erneut aufgerufen werden (das übernehmen die
+jeweiligen Event-Handler).
+
+## Responsive Layout
+
+`style.css` implementiert zwei Navigationsmuster über CSS media queries: eine Sidebar
+(`.sidebar`, `.nav-item`) für Desktop/Tablet und eine Bottom-Navigation (`.bottom-nav`,
+`.nav-btn`) für Mobile. Beide Navigationsleisten existieren gleichzeitig im DOM und werden
+per CSS ein-/ausgeblendet; `app.js` hält deshalb für Navigation zwei parallele
+Listener-Registrierungen (`.nav-btn` und `.nav-item`), die beide `showScreen()` aufrufen.
+
+## Bewertungsbogen — Item-Struktur
+
+19 Items, gruppiert in 6 Dimensionen, jeweils Schulnoten-Skala 1 (sehr gut) bis 6
+(ungenügend). Item-Keys: `a1–a4` (Lageerkundung), `b5–b8` (Entscheidungsqualität), `c9–c10`
+(Führung/Kommunikation), `d11–d12` (Struktur/Effizienz), `e13, e15, e16` (Umsetzung
+Lehrgangsinhalte — **Nummer 14 ist im Quellbogen bewusst ausgelassen**, kein Bug), `z17–z20`
+(Zusatzblock: subjektiver Leistungsvergleich). Definiert in `BEW_ITEMS` (`app.js:960`) und
+den zugehörigen Label-Texten direkt in `index.html`. Bei Änderungen an den Items müssen
+**beide** Stellen synchron gehalten werden (Array in `app.js` + Markup in `index.html`) sowie
+die CSV-Exportspalten (`app.js`, `btn-export-csv`-Handler).
+
+## Bekannte Einschränkungen
+
+- Kein automatisiertes Test-Setup (keine Unit-/E2E-Tests im Repo).
+- Kein Lint/Format-Tooling konfiguriert.
+- `localStorage`-Kapazität ist browserabhängig begrenzt (üblich 5–10 MB); die App fängt
+  Schreibfehler nur pauschal per `try/catch` in `save()` ab und zeigt einen generischen
+  Toast — kein differenziertes Verhalten bei Speicherplatzmangel.
+- Keine Datenmigration/Schema-Versionierung für `localStorage`-Inhalte (siehe oben).
+- Sensoriknummer ist hart auf den Bereich 1–12 validiert (`app.js:269`, `app.js:320`) —
+  Änderung dieses Bereichs erfordert Anpassung an beiden Stellen.
+- Löschen einzelner Teilnehmender/Sitzungen entfernt keine verknüpften Datensätze in anderen
+  Tabellen (siehe [DATENFLUSS.md](./DATENFLUSS.md) für die Datenschutz-Implikation).
+- Zwei vermutliche Backup-/Debug-Dateien im Repo-Root (`debug.html`, `download`, siehe oben)
+  sind nicht Teil der App und sollten bei größerer Aufräumarbeit hinterfragt, aber nicht
+  ungefragt gelöscht werden.
+
+## Offene TODOs
+
+- TODO: Datenschutzrechtliche Prüfung der in [DATENFLUSS.md](./DATENFLUSS.md) markierten
+  Punkte (Rechtsgrundlage, Aufbewahrungsfristen, Umgang mit Exportdateien).
+- TODO: Klären, ob die verwaisten Dateien `debug.html`, `download` und
+  `icon-512 (1).png` im Repo-Root entfernt werden können.
+- TODO: Entscheiden, ob Löschen einer Sitzung künftig automatisch die zugehörige Bewertung
+  mitlöschen soll (aktuell bewusst nicht der Fall, siehe oben).
+
+## Pflichten bei Code-Änderungen (Kurzfassung von `CLAUDE.md`)
+
+1. **Strict non-regression:** Änderungen additiv/visuell, nichts Bestehendes unangekündigt
+   brechen.
+2. **Minimale Diffs**, kein Refactoring nebenbei.
+3. Bei jeder inhaltlichen Änderung: `APP_VERSION` in `app.js`, `CACHE` in `sw.js` und die
+   beiden `.app-version`-Platzhalter in `index.html` synchron hochzählen.
+4. **Diese `/docs`-Dateien bei jeder Änderung an Datenerfassung, -speicherung,
+   -übertragung, Architektur oder Bedienung aktuell halten** — siehe Hinweis oben und
+   ursprüngliche Anforderung an diese Dokumentation.
+
+Vollständige Regeln: `/CLAUDE.md` im Repo-Root.
