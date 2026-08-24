@@ -1,5 +1,10 @@
 'use strict';
 
+// ── App Version (Single Source of Truth) ───────────────────────────────────
+// Bei jeder inhaltlichen Änderung Patch-Version erhöhen (z.B. 2.2.1 -> 2.2.2).
+// sw.js CACHE-Name manuell synchron mitziehen, damit alte Caches invalidiert werden.
+const APP_VERSION = '2.2.2';
+
 document.addEventListener('DOMContentLoaded', function() {
 
 // ── Storage Keys ────────────────────────────────────────────────────────────
@@ -1119,5 +1124,6 @@ const dateStr = new Date().toLocaleDateString('de-DE', { weekday:'short', year:'
 ['topbar-sub','sidebar-sub'].forEach(id => { const el = document.getElementById(id); if(el) el.textContent = dateStr; });
 const pdEl = document.getElementById('page-date'); if(pdEl) pdEl.textContent = dateStr;
 const ptEl = document.getElementById('page-title'); if(ptEl) ptEl.textContent = PAGE_TITLES['probanden'];
+document.querySelectorAll('.app-version').forEach(el => el.textContent = 'v' + APP_VERSION);
 
 }); // end DOMContentLoaded
