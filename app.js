@@ -3,7 +3,7 @@
 // ── App Version (Single Source of Truth) ───────────────────────────────────
 // Bei jeder inhaltlichen Änderung Patch-Version erhöhen (z.B. 2.2.1 -> 2.2.2).
 // sw.js CACHE-Name manuell synchron mitziehen, damit alte Caches invalidiert werden.
-const APP_VERSION = '2.2.2';
+const APP_VERSION = '2.3.0';
 
 document.addEventListener('DOMContentLoaded', function() {
 
@@ -198,6 +198,15 @@ document.querySelectorAll('.nav-item').forEach(btn =>
   btn.addEventListener('click', () => showScreen(btn.dataset.screen))
 );
 
+// "Jetzt"-Buttons: aktuelle Uhrzeit in das zugehörige Zeitfeld schreiben (Sensorik angelegt/abgelegt)
+document.querySelectorAll('.btn-time-now').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const target = document.getElementById(btn.dataset.target);
+    if (!target) return;
+    target.value = isoToTimeInput(new Date().toISOString());
+  });
+});
+
 // ══════════════════════════════════════════════════════════════════════════════
 // TEILNEHMENDE
 // ══════════════════════════════════════════════════════════════════════════════
@@ -219,11 +228,15 @@ function renderProbanden(filter = '') {
   list.innerHTML = filtered.map(p => {
     const done     = sessions.filter(s => s.probandId === p.id).length;
     const initials = p.pseudo.slice(-2).toUpperCase();
+    const sensTimes = (p.sensorAngelegtISO || p.sensorAbgelegtISO)
+      ? '  ·  Sensorik ' + (p.sensorAngelegtISO ? isoToTimeInput(p.sensorAngelegtISO).slice(0,5) : '–')
+             + '–' + (p.sensorAbgelegtISO ? isoToTimeInput(p.sensorAbgelegtISO).slice(0,5) : '–')
+      : '';
     return `<button class="proband-item" data-id="${esc(p.id)}">
       <div class="avatar">${esc(initials)}</div>
       <div class="proband-info">
         <div class="proband-name">${esc(p.pseudo)}</div>
-        <div class="proband-sub">SNR: ${esc(p.sensor)}${p.note ? '  ·  ' + esc(p.note) : ''}</div>
+        <div class="proband-sub">SNR: ${esc(p.sensor)}${p.note ? '  ·  ' + esc(p.note) : ''}${sensTimes}</div>
       </div>
       <span class="badge badge-count">${done} Sitzung${done !== 1 ? 'en' : ''}</span>
     </button>`;
@@ -248,13 +261,18 @@ function saveNewProband() {
   const pseudo = document.getElementById('inp-pseudo').value.trim();
   const sRaw   = document.getElementById('inp-sensor').value.trim();
   const note   = document.getElementById('inp-note').value.trim();
+  const anRaw  = document.getElementById('inp-sensor-an').value;
+  const abRaw  = document.getElementById('inp-sensor-ab').value;
   if (!pseudo) { showToast('⚠ Pseudonym eingeben'); return; }
   if (!sRaw)   { showToast('⚠ Sensoriknummer eingeben'); return; }
   const sensor = parseInt(sRaw, 10);
   if (isNaN(sensor) || sensor < 1 || sensor > 12) { showToast('⚠ Sensoriknummer 1–12'); return; }
   if (probanden.some(p => String(p.sensor) === String(sensor))) { showToast('⚠ SNR ' + sensor + ' vergeben'); return; }
   if (probanden.some(p => p.pseudo.toLowerCase() === pseudo.toLowerCase())) { showToast('⚠ Pseudonym vergeben'); return; }
-  probanden.push({ id: uid(), pseudo, sensor, note, createdAt: new Date().toISOString() });
+  const nowISO = new Date().toISOString();
+  const sensorAngelegtISO = anRaw ? rebuildISO(nowISO, anRaw) : null;
+  const sensorAbgelegtISO = abRaw ? rebuildISO(nowISO, abRaw) : null;
+  probanden.push({ id: uid(), pseudo, sensor, note, sensorAngelegtISO, sensorAbgelegtISO, createdAt: nowISO });
   save();
   clearAddForm();
   document.getElementById('add-form').classList.add('hidden');
@@ -262,7 +280,7 @@ function saveNewProband() {
   showToast('✓ ' + pseudo + ' angelegt');
 }
 function clearAddForm() {
-  ['inp-pseudo','inp-sensor','inp-note'].forEach(id => { document.getElementById(id).value = ''; });
+  ['inp-pseudo','inp-sensor','inp-note','inp-sensor-an','inp-sensor-ab'].forEach(id => { document.getElementById(id).value = ''; });
 }
 
 // ── Teilnehmende Edit/Delete ──────────────────────────────────────────────────
@@ -273,6 +291,8 @@ function openProbandEdit(id) {
   document.getElementById('edit-pseudo').value = p.pseudo;
   document.getElementById('edit-sensor').value = p.sensor;
   document.getElementById('edit-note').value   = p.note || '';
+  document.getElementById('edit-sensor-an').value = isoToTimeInput(p.sensorAngelegtISO);
+  document.getElementById('edit-sensor-ab').value = isoToTimeInput(p.sensorAbgelegtISO);
   document.getElementById('proband-edit-overlay').classList.remove('hidden');
 }
 function closeProbandEdit() {
@@ -292,13 +312,19 @@ document.getElementById('btn-save-proband-edit').addEventListener('click', () =>
   const pseudo = document.getElementById('edit-pseudo').value.trim();
   const sRaw   = document.getElementById('edit-sensor').value.trim();
   const note   = document.getElementById('edit-note').value.trim();
+  const anRaw  = document.getElementById('edit-sensor-an').value;
+  const abRaw  = document.getElementById('edit-sensor-ab').value;
   if (!pseudo) { showToast('⚠ Pseudonym eingeben'); return; }
   if (!sRaw)   { showToast('⚠ Sensoriknummer eingeben'); return; }
   const sensor = parseInt(sRaw, 10);
   if (isNaN(sensor) || sensor < 1 || sensor > 12) { showToast('⚠ Sensoriknummer 1–12'); return; }
   if (probanden.some((p,i) => i !== idx && String(p.sensor) === String(sensor))) { showToast('⚠ SNR vergeben'); return; }
   if (probanden.some((p,i) => i !== idx && p.pseudo.toLowerCase() === pseudo.toLowerCase())) { showToast('⚠ Pseudonym vergeben'); return; }
-  probanden[idx] = { ...probanden[idx], pseudo, sensor, note };
+  const baseAn = probanden[idx].sensorAngelegtISO || probanden[idx].createdAt || new Date().toISOString();
+  const baseAb = probanden[idx].sensorAbgelegtISO || probanden[idx].createdAt || new Date().toISOString();
+  const sensorAngelegtISO = anRaw ? rebuildISO(baseAn, anRaw) : null;
+  const sensorAbgelegtISO = abRaw ? rebuildISO(baseAb, abRaw) : null;
+  probanden[idx] = { ...probanden[idx], pseudo, sensor, note, sensorAngelegtISO, sensorAbgelegtISO };
   sessions = sessions.map(s => s.probandId === editingProbandId ? { ...s, pseudo, sensor } : s);
   save();
   closeProbandEdit();

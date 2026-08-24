@@ -47,7 +47,7 @@
       </button>
     </nav>
     <div class="sidebar-footer">
-      <span class="app-version">v2.2.2</span>
+      <span class="app-version">v2.3.0</span>
       <span class="lock-icon">🔒</span>
     </div>
   </aside>
@@ -65,7 +65,7 @@
         </div>
       </div>
       <div class="topbar-right">
-        <span class="app-version">v2.2.2</span>
+        <span class="app-version">v2.3.0</span>
         <span class="lock-icon">🔒</span>
       </div>
     </header>
@@ -99,6 +99,20 @@
               <div class="form-grid-full">
                 <label class="field-label" for="inp-note">Notiz (optional)</label>
                 <input type="text" id="inp-note" placeholder="z.B. Linkshänder" autocorrect="off">
+              </div>
+              <div>
+                <label class="field-label" for="inp-sensor-an">Sensorik angelegt</label>
+                <div class="time-capture-row">
+                  <input type="time" id="inp-sensor-an" step="1">
+                  <button type="button" class="btn btn-ghost btn-time-now" data-target="inp-sensor-an">🕐 Jetzt</button>
+                </div>
+              </div>
+              <div>
+                <label class="field-label" for="inp-sensor-ab">Sensorik abgelegt</label>
+                <div class="time-capture-row">
+                  <input type="time" id="inp-sensor-ab" step="1">
+                  <button type="button" class="btn btn-ghost btn-time-now" data-target="inp-sensor-ab">🕐 Jetzt</button>
+                </div>
               </div>
             </div>
             <div class="btn-row">
@@ -427,6 +441,22 @@
         </div>
         <label class="field-label" for="edit-note">Notiz (optional)</label>
         <input type="text" id="edit-note" autocorrect="off">
+        <div class="edit-row-2">
+          <div>
+            <label class="field-label" for="edit-sensor-an">Sensorik angelegt</label>
+            <div class="time-capture-row">
+              <input type="time" id="edit-sensor-an" step="1">
+              <button type="button" class="btn btn-ghost btn-time-now" data-target="edit-sensor-an">🕐 Jetzt</button>
+            </div>
+          </div>
+          <div>
+            <label class="field-label" for="edit-sensor-ab">Sensorik abgelegt</label>
+            <div class="time-capture-row">
+              <input type="time" id="edit-sensor-ab" step="1">
+              <button type="button" class="btn btn-ghost btn-time-now" data-target="edit-sensor-ab">🕐 Jetzt</button>
+            </div>
+          </div>
+        </div>
       </div>
       <div class="btn-col" style="margin-top:14px">
         <button class="btn btn-primary full-width" id="btn-save-proband-edit">💾 Speichern</button>
