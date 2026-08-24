@@ -3,7 +3,7 @@
 // ── App Version (Single Source of Truth) ───────────────────────────────────
 // Bei jeder inhaltlichen Änderung Patch-Version erhöhen (z.B. 2.2.1 -> 2.2.2).
 // sw.js CACHE-Name manuell synchron mitziehen, damit alte Caches invalidiert werden.
-const APP_VERSION = '2.3.2';
+const APP_VERSION = '2.3.3';
 
 document.addEventListener('DOMContentLoaded', function() {
 
@@ -1121,13 +1121,19 @@ document.getElementById('btn-save-bewertung').addEventListener('click', () => {
 });
 
 document.getElementById('btn-clear-bewertung').addEventListener('click', () => {
+  showConfirm('Eingaben zurücksetzen',
+    'Alle bisher eingetragenen Bewertungen und Anmerkungen in diesem Formular werden verworfen.',
+    () => resetBewertungForm());
+});
+
+function resetBewertungForm() {
   BEW_ITEMS.forEach(key => {
     const container = document.querySelector(`.bew-scale[data-item="${key}"]`);
     if (container) container.querySelectorAll('.bew-pip-btn').forEach(b => b.classList.remove('selected'));
   });
   document.getElementById('bew-notes').value = '';
   showToast('Eingaben zurückgesetzt');
-});
+}
 
 // ── INIT ──────────────────────────────────────────────────────────────────────
 load();
