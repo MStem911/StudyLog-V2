@@ -250,6 +250,8 @@ body {
 /* ══════════════════════════════════════════════════════
    Mobile baseline for multi-column layouts
 ══════════════════════════════════════════════════════ */
+.session-layout,
+.export-layout,
 .session-col-left,
 .session-col-right,
 .export-col-main,
