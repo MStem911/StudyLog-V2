@@ -837,11 +837,11 @@ input[type="time"] { color-scheme: dark; }
 }
 
 .bew-scale-endlabel {
-  flex: 0 1 auto;
+  flex: 0 0 auto;
   font-size: var(--text-sm);
   color: var(--text3);
   line-height: 1.2;
-  max-width: 62px;
+  white-space: nowrap;
 }
 .bew-scale-endlabel-left  { text-align: right; }
 .bew-scale-endlabel-right { text-align: left; }
