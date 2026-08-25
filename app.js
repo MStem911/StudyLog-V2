@@ -3,7 +3,7 @@
 // ── App Version (Single Source of Truth) ───────────────────────────────────
 // Bei jeder inhaltlichen Änderung Patch-Version erhöhen (z.B. 2.2.1 -> 2.2.2).
 // sw.js CACHE-Name manuell synchron mitziehen, damit alte Caches invalidiert werden.
-const APP_VERSION = '2.4.2';
+const APP_VERSION = '2.5.0';
 
 document.addEventListener('DOMContentLoaded', function() {
 
@@ -33,11 +33,12 @@ const DEFAULT_TAGS = [
 // ── State ────────────────────────────────────────────────────────────────────
 let probanden        = [];
 let sessions         = [];
-let settings         = { deviceLabel: '', lastExport: null };
+let settings         = { deviceLabel: '', lastExport: null, multiProband: false };
 let scenarios        = [];
 let tags             = [];
 let bewertungen      = [];
 let selectedScenId   = '';
+let selectedProbandIds = [];
 let timerInterval    = null;
 let timerStart       = null;
 let timerElapsed     = 0;
@@ -168,7 +169,8 @@ const PAGE_TITLES = {
   session:   'Sitzung aufzeichnen',
   log:       'Protokoll',
   bewertung: 'Trainerbewertungsbogen',
-  export:    'Export & Einstellungen',
+  export:    'Export',
+  settings:  'Einstellungen',
 };
 
 function showScreen(name) {
@@ -191,6 +193,7 @@ function showScreen(name) {
   if (name === 'export')    renderExport();
   if (name === 'probanden') renderProbanden();
   if (name === 'bewertung') renderBewertungScreen();
+  if (name === 'settings')  renderSettingsScreen();
 }
 
 // Mobile bottom nav
@@ -389,13 +392,59 @@ function buildProbandSelect() {
   sel.innerHTML = '<option value="">— Teilnehmende wählen —</option>' +
     probanden.map(p => `<option value="${esc(p.id)}">SNR ${esc(p.sensor)}  (${esc(p.pseudo)})</option>`).join('');
   if (probanden.some(p => p.id === cur)) sel.value = cur;
+
+  const multiMode = !!settings.multiProband;
+  sel.classList.toggle('hidden', multiMode);
+  document.getElementById('proband-multi-list').classList.toggle('hidden', !multiMode);
+  if (multiMode) buildProbandMultiList();
   updateProbandBadge();
 }
 
+function buildProbandMultiList() {
+  const list = document.getElementById('proband-multi-list');
+  selectedProbandIds = selectedProbandIds.filter(id => probanden.some(p => p.id === id));
+  if (!probanden.length) {
+    list.innerHTML = '<div style="color:var(--text3);font-size:15px">Keine Teilnehmenden angelegt</div>';
+    return;
+  }
+  list.innerHTML = probanden.map(p => {
+    const isSel = selectedProbandIds.includes(p.id);
+    return `<button class="proband-multi-item${isSel ? ' selected' : ''}" data-id="${esc(p.id)}">
+      <span class="pm-check">${isSel ? '✓' : ''}</span>
+      <span>SNR ${esc(p.sensor)}  (${esc(p.pseudo)})</span>
+    </button>`;
+  }).join('');
+  list.querySelectorAll('.proband-multi-item').forEach(btn =>
+    btn.addEventListener('click', () => {
+      const id  = btn.dataset.id;
+      const idx = selectedProbandIds.indexOf(id);
+      if (idx === -1) selectedProbandIds.push(id); else selectedProbandIds.splice(idx, 1);
+      buildProbandMultiList();
+      updateProbandBadge();
+    })
+  );
+}
+
+function getSelectedProbandIds() {
+  if (settings.multiProband) return selectedProbandIds.slice();
+  const v = document.getElementById('sel-proband').value;
+  return v ? [v] : [];
+}
+
 function updateProbandBadge() {
-  const sel   = document.getElementById('sel-proband');
   const badge = document.getElementById('proband-badge');
-  const p     = probanden.find(x => x.id === sel.value);
+  if (settings.multiProband) {
+    const n = selectedProbandIds.length;
+    if (n > 0) {
+      badge.textContent = `✓  ${n} Teilnehmende ausgewählt`;
+      badge.classList.remove('hidden');
+    } else {
+      badge.classList.add('hidden');
+    }
+    return;
+  }
+  const sel = document.getElementById('sel-proband');
+  const p   = probanden.find(x => x.id === sel.value);
   if (p) {
     badge.textContent = `✓  ${p.pseudo}${p.note ? '  ·  ' + p.note : ''}`;
     badge.classList.remove('hidden');
@@ -441,7 +490,7 @@ function startTimer() {
 }
 
 function beginTimer() {
-  if (!document.getElementById('sel-proband').value) { showToast('⚠ Teilnehmende wählen'); return; }
+  if (!getSelectedProbandIds().length) { showToast('⚠ Teilnehmende wählen'); return; }
   if (!selectedScenId) { showToast('⚠ Szenario wählen'); return; }
   timerStart      = Date.now();
   timerElapsed    = 0;
@@ -565,32 +614,35 @@ document.getElementById('btn-resume').addEventListener('click', resumeTimer);
 document.getElementById('btn-stop').addEventListener('click', stopTimer);
 
 document.getElementById('btn-save-session').addEventListener('click', () => {
-  const probandId = document.getElementById('sel-proband').value;
-  if (!probandId)       { showToast('⚠ Keine Teilnehmenden'); return; }
+  const probandIds = getSelectedProbandIds();
+  if (!probandIds.length) { showToast('⚠ Keine Teilnehmenden'); return; }
   if (!sessionStartISO) { showToast('⚠ Nicht gestartet'); return; }
   if (!sessionEndISO)   { showToast('⚠ Nicht gestoppt'); return; }
-  const p  = probanden.find(x => x.id === probandId);
   const sc = scenarios.find(x => x.id === selectedScenId);
   const deviations = getActiveTags('deviation-tags');
   const notes      = document.getElementById('session-notes').value.trim();
-  const newSessionId = uid();
-  sessions.push({
-    id: newSessionId, probandId,
-    pseudo:       p  ? p.pseudo  : '?',
-    sensor:       p  ? p.sensor  : '?',
-    scenarioId:   selectedScenId,
-    scenarioName: sc ? sc.name   : '?',
-    scenarioAbbr: sc ? sc.abbr   : '?',
-    date:         localDateStr(sessionStartISO),
-    startISO:     sessionStartISO,
-    endISO:       sessionEndISO,
-    duration_s:   timerElapsed,
-    pauses:          pauses.slice(),
-    pauseCount:      pauses.length,
-    pauseDuration_s: totalPauseSeconds(pauses),
-    deviations, notes,
-    deviceLabel:  settings.deviceLabel || '',
-    createdAt:    new Date().toISOString()
+  const newSessionIds = probandIds.map(probandId => {
+    const p = probanden.find(x => x.id === probandId);
+    const newSessionId = uid();
+    sessions.push({
+      id: newSessionId, probandId,
+      pseudo:       p  ? p.pseudo  : '?',
+      sensor:       p  ? p.sensor  : '?',
+      scenarioId:   selectedScenId,
+      scenarioName: sc ? sc.name   : '?',
+      scenarioAbbr: sc ? sc.abbr   : '?',
+      date:         localDateStr(sessionStartISO),
+      startISO:     sessionStartISO,
+      endISO:       sessionEndISO,
+      duration_s:   timerElapsed,
+      pauses:          pauses.slice(),
+      pauseCount:      pauses.length,
+      pauseDuration_s: totalPauseSeconds(pauses),
+      deviations, notes,
+      deviceLabel:  settings.deviceLabel || '',
+      createdAt:    new Date().toISOString()
+    });
+    return newSessionId;
   });
   save();
   sessionStartISO = null; sessionEndISO = null; timerElapsed = 0;
@@ -599,14 +651,16 @@ document.getElementById('btn-save-session').addEventListener('click', () => {
   renderTagRow('deviation-tags');
   document.getElementById('session-notes').value = '';
   updateTimerUI();
-  showToast('✓ Sitzung gespeichert');
-  // Bewertungsbogen-Prompt anzeigen
-  pendingBewertungSessionId = newSessionId;
-  const ps = sessions[sessions.length - 1];
-  const sc2 = scenarios.find(x => x.id === ps.scenarioId);
-  document.getElementById('bew-prompt-msg').textContent =
-    `Möchtest du jetzt den Trainerbewertungsbogen für ${ps.pseudo} · ${sc2 ? sc2.abbr : ps.scenarioAbbr || '?'} ausfüllen?`;
-  document.getElementById('bew-prompt-overlay').classList.remove('hidden');
+  showToast(newSessionIds.length > 1 ? `✓ ${newSessionIds.length} Sitzungen gespeichert` : '✓ Sitzung gespeichert');
+  // Bewertungsbogen-Prompt nur anzeigen, wenn genau eine Sitzung entstanden ist
+  if (newSessionIds.length === 1) {
+    pendingBewertungSessionId = newSessionIds[0];
+    const ps  = sessions.find(s => s.id === newSessionIds[0]);
+    const sc2 = scenarios.find(x => x.id === ps.scenarioId);
+    document.getElementById('bew-prompt-msg').textContent =
+      `Möchtest du jetzt den Trainerbewertungsbogen für ${ps.pseudo} · ${sc2 ? sc2.abbr : ps.scenarioAbbr || '?'} ausfüllen?`;
+    document.getElementById('bew-prompt-overlay').classList.remove('hidden');
+  }
 });
 
 // ── Scenario Manager ──────────────────────────────────────────────────────────
@@ -1051,9 +1105,22 @@ document.getElementById('btn-clear-data').addEventListener('click', () => {
     'Alle Teilnehmenden, Sitzungsdaten und Bewertungen werden unwiderruflich gelöscht. Vorher exportieren!',
     () => {
       probanden = []; sessions = []; bewertungen = []; settings.lastExport = null;
+      selectedProbandIds = [];
       save(); renderProbanden(); renderLog(); renderExport();
       showToast('Alle Daten gelöscht');
     });
+});
+
+// ══════════════════════════════════════════════════════════════════════════════
+// EINSTELLUNGEN
+// ══════════════════════════════════════════════════════════════════════════════
+function renderSettingsScreen() {
+  document.getElementById('chk-multi-proband').checked = !!settings.multiProband;
+}
+document.getElementById('chk-multi-proband').addEventListener('change', e => {
+  settings.multiProband = e.target.checked;
+  if (!settings.multiProband) selectedProbandIds = [];
+  save();
 });
 
 // ══════════════════════════════════════════════════════════════════════════════

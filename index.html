@@ -45,9 +45,13 @@
         <span class="nav-icon">↓</span>
         <span class="nav-label">Export</span>
       </button>
+      <button class="nav-item" data-screen="settings">
+        <span class="nav-icon">⚙</span>
+        <span class="nav-label">Einstellungen</span>
+      </button>
     </nav>
     <div class="sidebar-footer">
-      <span class="app-version">v2.4.2</span>
+      <span class="app-version">v2.5.0</span>
       <span class="lock-icon">🔒</span>
     </div>
   </aside>
@@ -65,7 +69,7 @@
         </div>
       </div>
       <div class="topbar-right">
-        <span class="app-version">v2.4.2</span>
+        <span class="app-version">v2.5.0</span>
         <span class="lock-icon">🔒</span>
       </div>
     </header>
@@ -140,6 +144,7 @@
                 <select id="sel-proband" class="field-select">
                   <option value="">— Teilnehmende wählen —</option>
                 </select>
+                <div class="proband-multi-list hidden" id="proband-multi-list"></div>
                 <div class="confirm-badge hidden" id="proband-badge"></div>
               </div>
               <div class="card">
@@ -332,9 +337,32 @@
                 <button class="btn btn-primary full-width" id="btn-export-csv">⬇ CSV exportieren</button>
                 <button class="btn btn-ghost full-width" id="btn-export-json">⬇ JSON exportieren</button>
               </div>
-              <div class="danger-zone">
-                <button class="btn btn-danger full-width" id="btn-clear-data">⚠ Alle Daten löschen</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ── Einstellungen ── -->
+      <section class="screen" id="screen-settings">
+        <div class="screen-inner">
+          <div class="card">
+            <div class="card-label">SITZUNGSAUFZEICHNUNG</div>
+            <div class="settings-row">
+              <div class="settings-row-text">
+                <div class="settings-row-title">Mehrere Teilnehmende gleichzeitig</div>
+                <div class="settings-row-desc">Erlaubt die Auswahl mehrerer Teilnehmender für eine gemeinsame Sitzungsaufzeichnung.</div>
               </div>
+              <label class="switch">
+                <input type="checkbox" id="chk-multi-proband">
+                <span class="switch-slider"></span>
+              </label>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-label" style="color:var(--coral-txt)">⚠ GEFAHRENZONE</div>
+            <p class="privacy-text" style="color:var(--text2)">Löscht alle Teilnehmenden, Sitzungsdaten und Bewertungen unwiderruflich auf diesem Gerät. Vorher exportieren!</p>
+            <div class="danger-zone">
+              <button class="btn btn-danger full-width" id="btn-clear-data">⚠ Alle Daten löschen</button>
             </div>
           </div>
         </div>
@@ -349,6 +377,7 @@
       <button class="nav-btn" data-screen="log"><span class="nav-icon">☰</span><span class="nav-label">Protokoll</span></button>
       <button class="nav-btn" data-screen="bewertung"><span class="nav-icon">📝</span><span class="nav-label">Bewertung</span></button>
       <button class="nav-btn" data-screen="export"><span class="nav-icon">↓</span><span class="nav-label">Export</span></button>
+      <button class="nav-btn" data-screen="settings"><span class="nav-icon">⚙</span><span class="nav-label">Einstellungen</span></button>
     </nav>
 
   </div><!-- /main-wrapper -->

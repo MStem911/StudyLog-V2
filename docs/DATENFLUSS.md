@@ -93,7 +93,7 @@ Gespeichert wird in sechs getrennten `localStorage`-Einträgen (Keys `sl_proband
 | **Trainerbewertungsbogen** (`sl_bewertungen`) | Verweis auf Sitzung, 19 Skalenwerte (Schulnoten-Skala 1–6) zu Leistungsdimensionen (u. a. Lageerkundung, Entscheidungsqualität, Führung/Kommunikation, MANV-Erkennung), Freitextanmerkungen | Strukturierte Leistungsbewertung der Teilnehmenden im Szenario | TODO: Datenschutz prüfen — Bewertungsdaten zu einer identifizierbaren (wenn auch pseudonymisierten) Person können besonders schutzwürdig sein | `localStorage`, lokal | Unbegrenzt, bis manuelle Löschung | Jeweilige Studienleitung / Gerätebesitzer:in |
 | **Sensorik-Zeiten** (Teil von `sl_probanden`) | Uhrzeit "Sensorik angelegt" / "Sensorik abgelegt" (manuell erfasst, **keine** Rohsensordaten) | Dokumentation des Sensorhandlings im Studienablauf | TODO: Datenschutz prüfen | `localStorage`, lokal | Unbegrenzt, bis manuelle Löschung | Jeweilige Studienleitung / Gerätebesitzer:in |
 | **Szenario- & Tag-Konfiguration** (`sl_scenarios`, `sl_tags`) | Name/Abkürzung/Icon der Szenarien, Liste möglicher Abweichungs-Tags | App-Konfiguration, keine Personenbezug | Nicht personenbezogen | `localStorage`, lokal | Unbegrenzt (wird von "Alle Daten löschen" **nicht** erfasst) | Jeweilige Studienleitung / Gerätebesitzer:in |
-| **Einstellungen** (`sl_settings`) | Geräte-/Betreuungslabel (Freitext), Zeitpunkt letzter Export | App-Konfiguration und Exportnachweis | Nicht personenbezogen (kann ggf. Namen enthalten, falls Studienleitung sich selbst dort einträgt) | `localStorage`, lokal | Unbegrenzt (Gerätelabel wird von "Alle Daten löschen" **nicht** erfasst) | Jeweilige Studienleitung / Gerätebesitzer:in |
+| **Einstellungen** (`sl_settings`) | Geräte-/Betreuungslabel (Freitext), Zeitpunkt letzter Export, Ein/Aus-Schalter "Mehrere Teilnehmende gleichzeitig" (`multiProband`) | App-Konfiguration und Exportnachweis | Nicht personenbezogen (kann ggf. Namen enthalten, falls Studienleitung sich selbst dort einträgt) | `localStorage`, lokal | Unbegrenzt (wird von "Alle Daten löschen" **nicht** erfasst) | Jeweilige Studienleitung / Gerätebesitzer:in |
 | **Export-Dateien** (CSV/JSON) | Kombination aller obigen personenbezogenen Felder inkl. Bewertungswerte | Zusammenführung/Auswertung mehrerer Geräte nach Studienabschluss | TODO: Datenschutz prüfen | Dateisystem des Geräts (Download-Ordner), danach außerhalb der App-Kontrolle | Unbestimmt — liegt außerhalb der App | TODO: Datenschutz prüfen — vermutlich Studienleitung/Institution |
 
 ## Löschverhalten im Detail (technisch verifiziert im Code)
@@ -107,10 +107,11 @@ Gespeichert wird in sechs getrennten `localStorage`-Einträgen (Keys `sl_proband
 - **Einzelne Sitzung löschen:** Entfernt genau diesen Eintrag aus `sl_sessions`. Zugehörige
   Bewertungsbogen-Einträge in `sl_bewertungen` werden dabei **nicht** automatisch mitgelöscht
   (verwaister Verweis über `sessionId` bleibt bestehen). TODO: Datenschutz prüfen.
-- **"Alle Daten löschen" (Export-Screen):** Leert `sl_probanden`, `sl_sessions` und
+- **"Alle Daten löschen" (Einstellungen-Screen):** Leert `sl_probanden`, `sl_sessions` und
   `sl_bewertungen` sowie den Zeitstempel des letzten Exports vollständig. **Nicht** betroffen
   sind die Szenario-Konfiguration (`sl_scenarios`), die Tag-Liste (`sl_tags`) und das
-  Geräte-/Betreuungslabel (`sl_settings.deviceLabel`) — diese gelten als reine
+  Geräte-/Betreuungslabel sowie der Schalter "Mehrere Teilnehmende gleichzeitig"
+  (`sl_settings.deviceLabel`/`sl_settings.multiProband`) — diese gelten als reine
   App-Konfiguration ohne Personenbezug.
 - **Kein automatischer Ablauf/keine Aufbewahrungsfrist:** Die App löscht nichts von selbst.
   Daten bleiben im `localStorage` des Browsers bestehen, bis eine der obigen Aktionen manuell

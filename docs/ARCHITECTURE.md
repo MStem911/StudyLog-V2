@@ -76,7 +76,7 @@ Schema-Versionierung** von `localStorage`-Daten; neue Felder müssen daher stets
 | `sl_bewertungen` | `bewertungen` | `{ id, sessionId, pseudo, sensor, scenarioId, scenarioName, scenarioAbbr, date, scores: { a1..z20 }, notes, savedAt }` |
 | `sl_scenarios` | `scenarios` | `{ id, name, abbr, icon }` — Default: VR Welt / Verkehrsunfall / Krankenhaus |
 | `sl_tags` | `tags` | `string[]` — freie Liste von Abweichungs-Bezeichnungen |
-| `sl_settings` | `settings` | `{ deviceLabel, lastExport }` |
+| `sl_settings` | `settings` | `{ deviceLabel, lastExport, multiProband }` |
 
 **Pausen-Timer (`pauses[]`):** Jeder Eintrag hat die Form `{ startISO, endISO, duration_s }`.
 `duration_s` auf Sitzungsebene ist die **aktive Dauer ohne Pausen** — der Timer wird beim
@@ -100,6 +100,17 @@ der `sessions` aktiv nachzieht). TODO: bei künftigen Änderungen an Szenario-Ed
 beachten, falls eine Bearbeitungsmöglichkeit für Szenarien ergänzt wird (aktuell gibt es nur
 Anlegen/Löschen/Reihenfolge ändern, kein Umbenennen bestehender Szenarien).
 
+**Mehrfachauswahl Teilnehmende (`settings.multiProband`):** Ist diese Einstellung aktiv,
+erlaubt der Sitzungsscreen die Auswahl mehrerer `probandId`s gleichzeitig (State-Array
+`selectedProbandIds`, UI in `#proband-multi-list` statt des `<select id="sel-proband">`).
+Es gibt **kein** neues Datenmodell für "gemeinsame Sitzungen" — beim Speichern
+(`btn-save-session`-Handler) wird für **jede** ausgewählte Person ein eigener, vollständig
+unabhängiger `sessions`-Eintrag mit eigener `id` erzeugt, alle mit identischem
+`startISO`/`endISO`/`duration_s`/`pauses[]`/`scenarioId`/`deviations`/`notes`. Es existiert
+also keine Gruppierungs-ID zwischen diesen Einträgen; ein Zusammenhang ist nur implizit über
+identische Zeitstempel/Szenario erkennbar. Der Bewertungsbogen-Prompt nach dem Speichern
+erscheint nur, wenn genau eine Sitzung entstanden ist (`newSessionIds.length === 1`).
+
 ## Modul-Verantwortlichkeiten in `app.js` (in Dateireihenfolge)
 
 | Abschnitt (Kommentar-Marker im Code) | Zeilen (ca.) | Verantwortlichkeit |
@@ -108,13 +119,14 @@ Anlegen/Löschen/Reihenfolge ändern, kein Umbenennen bestehender Szenarien).
 | Persistence | 52–90 | `save()`, `load()` |
 | Utilities | 86–142 | `uid()`, Datum/Zeit-Formatierung (`formatTime`, `localTimeStr`, `isoToTimeInput`, `rebuildISO`), `esc()` (HTML-Escaping gegen XSS beim Rendern von Nutzereingaben), `showToast()` |
 | Confirm Dialog | 144–159 | Generischer Bestätigungsdialog (`showConfirm`), von mehreren Lösch-Aktionen wiederverwendet |
-| Navigation | 161–208 | `showScreen()` (Screen-Wechsel + Re-Render des Zielscreens), Nav-Button-Listener |
-| TEILNEHMENDE | 210–353 | Liste rendern/filtern, Anlegen, Bearbeiten, Löschen von Personen |
-| SESSION | 355–~700 | Szenario-Auswahl, Teilnehmenden-Auswahl, Start/Pause/Fortsetzen/Stopp-Timer (`startTimer`, `pauseTimer`, `resumeTimer`, `stopTimer`), Tag-Zeilen, Sitzung speichern, Szenario-/Tag-Manager (CRUD für Konfiguration) |
-| LOG | 662–847 | Sitzungsliste mit Filtern, Detailansicht, Bearbeiten, Löschen |
-| EXPORT | 849–954 | Statistiken, CSV-/JSON-Export, Geräte-Label, "Alle Daten löschen" |
-| BEWERTUNGSBOGEN | 956–1140 | Post-Session-Prompt, Sitzungsauswahl, 19 Bewertungsskalen (1–6), Speichern/Überschreiben |
-| INIT | 1142–1155 | Startsequenz: `load()`, initiales Rendering aller Screens, Versionsanzeige |
+| Navigation | 166–217 | `showScreen()` (Screen-Wechsel + Re-Render des Zielscreens), Nav-Button-Listener |
+| TEILNEHMENDE | 219–362 | Liste rendern/filtern, Anlegen, Bearbeiten, Löschen von Personen |
+| SESSION | 364–~799 | Szenario-Auswahl, Teilnehmenden-Auswahl (Einzel- **und** Mehrfachauswahl je nach `settings.multiProband`, `getSelectedProbandIds()`), Start/Pause/Fortsetzen/Stopp-Timer (`startTimer`, `pauseTimer`, `resumeTimer`, `stopTimer`), Tag-Zeilen, Sitzung speichern (ggf. mehrere Einträge bei Mehrfachauswahl), Szenario-/Tag-Manager (CRUD für Konfiguration) |
+| LOG | 799–1003 | Sitzungsliste mit Filtern, Detailansicht, Bearbeiten, Löschen |
+| EXPORT | 1003–1114 | Statistiken, CSV-/JSON-Export, Geräte-Label |
+| EINSTELLUNGEN | 1114–1126 | `renderSettingsScreen()`, Toggle "Mehrere Teilnehmende gleichzeitig" (`settings.multiProband`), "Alle Daten löschen" (`btn-clear-data`) |
+| BEWERTUNGSBOGEN | 1126–1318 | Post-Session-Prompt, Sitzungsauswahl, 19 Bewertungsskalen (1–6), Speichern/Überschreiben |
+| INIT | 1318–1331 | Startsequenz: `load()`, initiales Rendering aller Screens, Versionsanzeige |
 
 ## Konventionen im Code
 

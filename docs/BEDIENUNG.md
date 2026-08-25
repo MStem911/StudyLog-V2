@@ -16,7 +16,7 @@
 
 ## Kernfunktionen im Überblick
 
-Die App hat fünf Bereiche, erreichbar über die Navigation (unten auf dem Smartphone, links
+Die App hat sechs Bereiche, erreichbar über die Navigation (unten auf dem Smartphone, links
 auf Tablet/Desktop):
 
 | Bereich | Zweck |
@@ -25,7 +25,8 @@ auf Tablet/Desktop):
 | ⏺ **Sitzung** | Timer starten/stoppen, Szenario wählen, Abweichungen/Notizen erfassen |
 | ☰ **Protokoll** | Übersicht aller gespeicherten Sitzungen, filtern, bearbeiten, löschen |
 | 📝 **Bewertung** | Trainerbewertungsbogen zu einer Sitzung ausfüllen |
-| ↓ **Export** | Daten als CSV/JSON exportieren, Statistiken einsehen, Daten löschen |
+| ↓ **Export** | Daten als CSV/JSON exportieren, Statistiken einsehen |
+| ⚙ **Einstellungen** | App-Verhalten anpassen (z. B. Mehrfachauswahl), alle Daten löschen |
 
 ## Typischer Ablauf einer Nutzungssitzung
 
@@ -41,7 +42,12 @@ auf Tablet/Desktop):
 
 ### 2. Sitzung durchführen
 
-1. Im Bereich **Sitzung**: gewünschte Person im Dropdown auswählen.
+1. Im Bereich **Sitzung**: gewünschte Person im Dropdown auswählen. Ist unter
+   **⚙ Einstellungen** die Option "Mehrere Teilnehmende gleichzeitig" aktiviert, erscheint
+   stattdessen eine Liste zum Antippen mehrerer Personen (z. B. wenn ein Szenario von
+   mehreren Teilnehmenden gemeinsam durchlaufen wird). Beim Speichern entsteht dann für
+   jede ausgewählte Person eine eigene, unabhängige Sitzungsaufzeichnung mit identischer
+   Start-/Endzeit.
 2. Passendes **Szenario** antippen (z. B. VR Welt, Verkehrsunfall, Krankenhaus).
 3. **▶ Start** drücken, sobald das Szenario beginnt — der Timer läuft.
 4. Falls die Sitzung unterbrochen werden muss (z. B. technische Störung, Rückfrage):
@@ -54,9 +60,11 @@ auf Tablet/Desktop):
    **Abweichungs-Tags** antippen (z. B. "Techn. Fehler") und/oder eine Freitextnotiz
    eintragen.
 7. Mit **💾 Sitzung speichern** abschließen.
-8. Danach fragt die App, ob direkt der **Trainerbewertungsbogen** für diese Sitzung
-   ausgefüllt werden soll (siehe Schritt 3) — kann auch später über den Bereich
-   **Bewertung** nachgeholt werden.
+8. War nur eine Person ausgewählt, fragt die App danach, ob direkt der
+   **Trainerbewertungsbogen** für diese Sitzung ausgefüllt werden soll (siehe Schritt 3) —
+   kann auch später über den Bereich **Bewertung** nachgeholt werden. Bei mehreren
+   gleichzeitig ausgewählten Personen entfällt diese Rückfrage; die Bewertungsbögen können
+   im Bereich **Bewertung** einzeln je Person nachgeholt werden.
 
 **Wichtig:** Wird nach dem Stoppen erneut **▶ Start** gedrückt, ohne vorher zu speichern,
 fragt die App zur Sicherheit nach ("Aufzeichnung verwerfen?"), bevor die noch nicht
@@ -92,10 +100,10 @@ gespeicherte Aufzeichnung durch die neue Sitzung überschrieben wird.
    gespeichert (z. B. im Download-Ordner).
 4. Die exportierte Datei anschließend gemäß den Vorgaben der Studienleitung sicher
    weitergeben bzw. ablegen (dies erfolgt außerhalb der App).
-5. **Erst nach erfolgreichem Export und Sicherung der Daten:** Falls gewünscht, über
-   **⚠ Alle Daten löschen** sämtliche Teilnehmenden-, Sitzungs- und Bewertungsdaten auf
-   diesem Gerät unwiderruflich entfernen. Die App warnt vor dieser Aktion — sie kann nicht
-   rückgängig gemacht werden.
+5. **Erst nach erfolgreichem Export und Sicherung der Daten:** Falls gewünscht, im Bereich
+   **⚙ Einstellungen** über **⚠ Alle Daten löschen** sämtliche Teilnehmenden-, Sitzungs- und
+   Bewertungsdaten auf diesem Gerät unwiderruflich entfernen. Die App warnt vor dieser
+   Aktion — sie kann nicht rückgängig gemacht werden.
 
 ## Mehrere Geräte
 
