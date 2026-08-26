@@ -407,6 +407,11 @@ select {
 }
 input:focus, textarea:focus, select:focus { border-color: var(--purple); }
 input::placeholder, textarea::placeholder { color: var(--text3); font-size: var(--text-md); }
+input.field-invalid { border-color: var(--coral); }
+input.field-invalid:focus { border-color: var(--coral); }
+.field-error {
+  color: var(--coral-txt); font-size: var(--text-sm); margin-top: 4px;
+}
 textarea { resize: vertical; line-height: 1.5; min-height: 72px; }
 
 select {

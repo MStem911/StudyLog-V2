@@ -34,8 +34,9 @@ auf Tablet/Desktop):
 
 1. Im Bereich **Teilnehmende** auf **+** tippen.
 2. **Pseudonym** eingeben — **kein Klarname**. Format ist vorgegeben: 1 Buchstabe, dann 4
-   Zahlen, dann 3 Buchstaben (z. B. `P1234ABC`). Bei falschem Format erscheint ein Hinweis
-   und das Anlegen wird abgebrochen.
+   Zahlen, dann 3 Buchstaben (z. B. `P1234ABC`). Passt die Eingabe nicht zum Format, wird das
+   Feld sofort rot markiert mit dem Hinweis "Format nicht korrekt" darunter; Anlegen ist erst
+   möglich, wenn das Format stimmt.
 3. **Sensoriknummer** (1–12) der zugewiesenen Sensor-Einheit eingeben.
 4. Optional: Notiz eintragen (z. B. "Linkshänder").
 5. Optional: Uhrzeit "Sensorik angelegt" erfassen — per Tastatur oder Knopf "🕐 Jetzt" für

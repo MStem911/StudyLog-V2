@@ -3,7 +3,7 @@
 // ── App Version (Single Source of Truth) ───────────────────────────────────
 // Bei jeder inhaltlichen Änderung Patch-Version erhöhen (z.B. 2.2.1 -> 2.2.2).
 // sw.js CACHE-Name manuell synchron mitziehen, damit alte Caches invalidiert werden.
-const APP_VERSION = '2.7.0';
+const APP_VERSION = '2.7.1';
 
 document.addEventListener('DOMContentLoaded', function() {
 
@@ -98,6 +98,18 @@ function deepCopy(x) { return JSON.parse(JSON.stringify(x)); }
 // Pseudonym-Format: 1 Buchstabe, 4 Zahlen, 3 Buchstaben (z.B. "P1234ABC")
 const PSEUDO_FORMAT_REGEX = /^[A-Za-z]\d{4}[A-Za-z]{3}$/;
 function isValidPseudoFormat(pseudo) { return PSEUDO_FORMAT_REGEX.test(pseudo); }
+
+// Live-Validierung: markiert das Eingabefeld rot + zeigt Hinweistext, solange das Format
+// nicht passt. Leeres Feld gilt nicht als ungültig (keine Fehlermeldung vor der ersten Eingabe).
+function setPseudoFieldValidity(inputId, errorId) {
+  const input   = document.getElementById(inputId);
+  const errorEl = document.getElementById(errorId);
+  const pseudo  = input.value.trim();
+  const invalid = pseudo.length > 0 && !isValidPseudoFormat(pseudo);
+  input.classList.toggle('field-invalid', invalid);
+  errorEl.classList.toggle('hidden', !invalid);
+  return !invalid;
+}
 
 function formatTime(sec) {
   const s = Math.max(0, Math.floor(Number(sec) || 0));
@@ -268,6 +280,9 @@ document.getElementById('btn-cancel-proband').addEventListener('click', () => {
   clearAddForm();
 });
 document.getElementById('btn-save-proband').addEventListener('click', saveNewProband);
+document.getElementById('inp-pseudo').addEventListener('input', () =>
+  setPseudoFieldValidity('inp-pseudo', 'inp-pseudo-error')
+);
 
 function saveNewProband() {
   const pseudo = document.getElementById('inp-pseudo').value.trim();
@@ -276,7 +291,7 @@ function saveNewProband() {
   const anRaw  = document.getElementById('inp-sensor-an').value;
   const abRaw  = document.getElementById('inp-sensor-ab').value;
   if (!pseudo) { showToast('⚠ Pseudonym eingeben'); return; }
-  if (!isValidPseudoFormat(pseudo)) { showToast('⚠ Format ungültig (z.B. P1234ABC)'); return; }
+  if (!setPseudoFieldValidity('inp-pseudo', 'inp-pseudo-error')) { showToast('⚠ Format ungültig (z.B. P1234ABC)'); return; }
   if (!sRaw)   { showToast('⚠ Sensoriknummer eingeben'); return; }
   const sensor = parseInt(sRaw, 10);
   if (isNaN(sensor) || sensor < 1 || sensor > 12) { showToast('⚠ Sensoriknummer 1–12'); return; }
@@ -294,6 +309,7 @@ function saveNewProband() {
 }
 function clearAddForm() {
   ['inp-pseudo','inp-sensor','inp-note','inp-sensor-an','inp-sensor-ab'].forEach(id => { document.getElementById(id).value = ''; });
+  setPseudoFieldValidity('inp-pseudo', 'inp-pseudo-error');
 }
 
 // ── Teilnehmende Edit/Delete ──────────────────────────────────────────────────
@@ -306,6 +322,7 @@ function openProbandEdit(id) {
   document.getElementById('edit-note').value   = p.note || '';
   document.getElementById('edit-sensor-an').value = isoToTimeInput(p.sensorAngelegtISO);
   document.getElementById('edit-sensor-ab').value = isoToTimeInput(p.sensorAbgelegtISO);
+  setPseudoFieldValidity('edit-pseudo', 'edit-pseudo-error');
   document.getElementById('proband-edit-overlay').classList.remove('hidden');
 }
 function closeProbandEdit() {
@@ -317,6 +334,9 @@ document.getElementById('proband-edit-cancel').addEventListener('click', closePr
 document.getElementById('proband-edit-overlay').addEventListener('click', e => {
   if (e.target === document.getElementById('proband-edit-overlay')) closeProbandEdit();
 });
+document.getElementById('edit-pseudo').addEventListener('input', () =>
+  setPseudoFieldValidity('edit-pseudo', 'edit-pseudo-error')
+);
 
 document.getElementById('btn-save-proband-edit').addEventListener('click', () => {
   if (!editingProbandId) return;
@@ -328,7 +348,7 @@ document.getElementById('btn-save-proband-edit').addEventListener('click', () =>
   const anRaw  = document.getElementById('edit-sensor-an').value;
   const abRaw  = document.getElementById('edit-sensor-ab').value;
   if (!pseudo) { showToast('⚠ Pseudonym eingeben'); return; }
-  if (!isValidPseudoFormat(pseudo)) { showToast('⚠ Format ungültig (z.B. P1234ABC)'); return; }
+  if (!setPseudoFieldValidity('edit-pseudo', 'edit-pseudo-error')) { showToast('⚠ Format ungültig (z.B. P1234ABC)'); return; }
   if (!sRaw)   { showToast('⚠ Sensoriknummer eingeben'); return; }
   const sensor = parseInt(sRaw, 10);
   if (isNaN(sensor) || sensor < 1 || sensor > 12) { showToast('⚠ Sensoriknummer 1–12'); return; }

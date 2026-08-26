@@ -51,7 +51,7 @@
       </button>
     </nav>
     <div class="sidebar-footer">
-      <span class="app-version">v2.7.0</span>
+      <span class="app-version">v2.7.1</span>
       <span class="lock-icon">🔒</span>
     </div>
   </aside>
@@ -69,7 +69,7 @@
         </div>
       </div>
       <div class="topbar-right">
-        <span class="app-version">v2.7.0</span>
+        <span class="app-version">v2.7.1</span>
         <span class="lock-icon">🔒</span>
       </div>
     </header>
@@ -95,6 +95,7 @@
               <div>
                 <label class="field-label" for="inp-pseudo">Pseudonym</label>
                 <input type="text" id="inp-pseudo" placeholder="z.B. P1234ABC" autocomplete="off" autocorrect="off" autocapitalize="characters">
+                <div class="field-error hidden" id="inp-pseudo-error">Format nicht korrekt</div>
               </div>
               <div>
                 <label class="field-label" for="inp-sensor">Sensoriknummer (1–12)</label>
@@ -477,6 +478,7 @@
           <div>
             <label class="field-label" for="edit-pseudo">Pseudonym</label>
             <input type="text" id="edit-pseudo" autocomplete="off" autocorrect="off" autocapitalize="characters">
+            <div class="field-error hidden" id="edit-pseudo-error">Format nicht korrekt</div>
           </div>
           <div>
             <label class="field-label" for="edit-sensor">Sensoriknummer (1–12)</label>

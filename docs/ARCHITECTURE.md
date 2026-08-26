@@ -52,7 +52,7 @@ Event-Listener leben in diesem einen Closure-Scope; es gibt keine Module/Imports
 UI-/Timer-State wie `sessionRunning`, `selectedScenId`, `detailSessionId`). Zwei zentrale
 Funktionen synchronisieren diesen State mit `localStorage`:
 
-- **`load()`** — beim Start einmal aufgerufen (`app.js:1391`), liest alle sechs
+- **`load()`** — beim Start einmal aufgerufen (`app.js:1411`), liest alle sechs
   `localStorage`-Keys, parsed JSON, füllt fehlende/leere Konfigurationslisten
   (`scenarios`, `tags`) mit Defaults auf.
 - **`save()`** — nach **jeder** datenverändernden Aktion aufgerufen, schreibt alle sechs
@@ -65,7 +65,7 @@ neuen Feldern, die betroffene State-Variable (z. B. ein Objekt in `probanden`) z
 es muss keine Migration/Schema-Version gepflegt werden. Es gibt **keine
 Schema-Versionierung** von `localStorage`-Daten; neue Felder müssen daher stets mit
 `undefined`/`null`-Fallbacks für Alt-Daten umgehen können (siehe z. B. `p.sensorAngelegtISO
-|| p.createdAt` in `app.js:337`).
+|| p.createdAt` in `app.js:357`).
 
 ### `localStorage`-Keys und Datenmodelle
 
@@ -95,7 +95,7 @@ Beachte: `sessions`- und `bewertungen`-Einträge speichern `pseudo`/`sensor`/`sc
 Referenz zu halten). Das ist bewusst so gebaut, damit Protokolle auch nach Löschen einer
 Person oder eines Szenarios noch lesbar bleiben — hat aber zur Folge, dass ein nachträgliches
 Umbenennen eines Szenarios bestehende Sitzungen **nicht** rückwirkend aktualisiert (bei
-Personen-Umbenennung dagegen schon, siehe `btn-save-proband-edit`-Handler in `app.js:321`,
+Personen-Umbenennung dagegen schon, siehe `btn-save-proband-edit`-Handler in `app.js:341`,
 der `sessions` aktiv nachzieht). TODO: bei künftigen Änderungen an Szenario-Edit-Funktion
 beachten, falls eine Bearbeitungsmöglichkeit für Szenarien ergänzt wird (aktuell gibt es nur
 Anlegen/Löschen/Reihenfolge ändern, kein Umbenennen bestehender Szenarien).
@@ -135,16 +135,16 @@ Dropdown vorausgewählt (Einzel-Modus).
 |---|---|---|
 | App Version / Storage Keys / Defaults | 1–58 | Versions-Konstante, `localStorage`-Keys, Default-Szenarien/Tags, State-Deklaration |
 | Persistence | 58–92 | `save()`, `load()` |
-| Utilities | 92–154 | `uid()`, Datum/Zeit-Formatierung (`formatTime`, `localTimeStr`, `isoToTimeInput`, `rebuildISO`), `esc()` (HTML-Escaping gegen XSS beim Rendern von Nutzereingaben), `showToast()`, `isValidPseudoFormat()` (Pseudonym-Formatprüfung) |
-| Confirm Dialog | 154–171 | Generischer Bestätigungsdialog (`showConfirm`), von mehreren Lösch-Aktionen wiederverwendet |
-| Navigation | 171–222 | `showScreen()` (Screen-Wechsel + Re-Render des Zielscreens), Nav-Button-Listener |
-| TEILNEHMENDE | 222–369 | Liste rendern/filtern, Anlegen, Bearbeiten, Löschen von Personen (inkl. Pseudonym-Formatprüfung beim Anlegen/Bearbeiten) |
-| SESSION | 369–~810 | Szenario-Auswahl, Teilnehmenden-Auswahl (Einzel- **und** Mehrfachauswahl je nach `settings.multiProband`, `getSelectedProbandIds()`), Start/Pause/Fortsetzen/Stopp-Timer (`startTimer`, `pauseTimer`, `resumeTimer`, `stopTimer`), Tag-Zeilen, Sitzung speichern (ggf. mehrere Einträge bei Mehrfachauswahl), Szenario-/Tag-Manager (CRUD für Konfiguration) |
-| LOG | 810–1014 | Sitzungsliste mit Filtern, Detailansicht, Bearbeiten, Löschen |
-| EXPORT | 1014–1125 | Statistiken, CSV-/JSON-Export, Geräte-Label |
-| EINSTELLUNGEN | 1125–1137 | `renderSettingsScreen()`, Toggle "Mehrere Teilnehmende gleichzeitig" (`settings.multiProband`), "Alle Daten löschen" (`btn-clear-data`) |
-| BEWERTUNGSBOGEN | 1137–1390 | Post-Session-Prompt (inkl. Vorschlag zur gemeinsamen Bewertung bei mehreren Teilnehmenden), Sitzungsauswahl (Einzel- **und** Mehrfachauswahl je nach `settings.multiProband`, `getSelectedBewSessionIds()`), 19 Bewertungsskalen (1–6), Speichern/Überschreiben (ggf. mehrere Einträge bei Mehrfachauswahl) |
-| INIT | 1390–1403 | Startsequenz: `load()`, initiales Rendering aller Screens, Versionsanzeige |
+| Utilities | 92–166 | `uid()`, Datum/Zeit-Formatierung (`formatTime`, `localTimeStr`, `isoToTimeInput`, `rebuildISO`), `esc()` (HTML-Escaping gegen XSS beim Rendern von Nutzereingaben), `showToast()`, `isValidPseudoFormat()`/`setPseudoFieldValidity()` (Pseudonym-Formatprüfung inkl. Live-Rotmarkierung im Formular) |
+| Confirm Dialog | 166–183 | Generischer Bestätigungsdialog (`showConfirm`), von mehreren Lösch-Aktionen wiederverwendet |
+| Navigation | 183–234 | `showScreen()` (Screen-Wechsel + Re-Render des Zielscreens), Nav-Button-Listener |
+| TEILNEHMENDE | 234–389 | Liste rendern/filtern, Anlegen, Bearbeiten, Löschen von Personen (inkl. Pseudonym-Formatprüfung — live per `input`-Listener und beim Speichern — beim Anlegen/Bearbeiten) |
+| SESSION | 389–~830 | Szenario-Auswahl, Teilnehmenden-Auswahl (Einzel- **und** Mehrfachauswahl je nach `settings.multiProband`, `getSelectedProbandIds()`), Start/Pause/Fortsetzen/Stopp-Timer (`startTimer`, `pauseTimer`, `resumeTimer`, `stopTimer`), Tag-Zeilen, Sitzung speichern (ggf. mehrere Einträge bei Mehrfachauswahl), Szenario-/Tag-Manager (CRUD für Konfiguration) |
+| LOG | 830–1034 | Sitzungsliste mit Filtern, Detailansicht, Bearbeiten, Löschen |
+| EXPORT | 1034–1145 | Statistiken, CSV-/JSON-Export, Geräte-Label |
+| EINSTELLUNGEN | 1145–1157 | `renderSettingsScreen()`, Toggle "Mehrere Teilnehmende gleichzeitig" (`settings.multiProband`), "Alle Daten löschen" (`btn-clear-data`) |
+| BEWERTUNGSBOGEN | 1157–1410 | Post-Session-Prompt (inkl. Vorschlag zur gemeinsamen Bewertung bei mehreren Teilnehmenden), Sitzungsauswahl (Einzel- **und** Mehrfachauswahl je nach `settings.multiProband`, `getSelectedBewSessionIds()`), 19 Bewertungsskalen (1–6), Speichern/Überschreiben (ggf. mehrere Einträge bei Mehrfachauswahl) |
+| INIT | 1410–1423 | Startsequenz: `load()`, initiales Rendering aller Screens, Versionsanzeige |
 
 ## Konventionen im Code
 
@@ -198,7 +198,7 @@ Listener-Registrierungen (`.nav-btn` und `.nav-item`), die beide `showScreen()` 
 (ungenügend). Item-Keys: `a1–a4` (Lageerkundung), `b5–b8` (Entscheidungsqualität), `c9–c10`
 (Führung/Kommunikation), `d11–d12` (Struktur/Effizienz), `e13, e15, e16` (Umsetzung
 Lehrgangsinhalte — **Nummer 14 ist im Quellbogen bewusst ausgelassen**, kein Bug), `z17–z20`
-(Zusatzblock: subjektiver Leistungsvergleich). Definiert in `BEW_ITEMS` (`app.js:1141`) und
+(Zusatzblock: subjektiver Leistungsvergleich). Definiert in `BEW_ITEMS` (`app.js:1161`) und
 den zugehörigen Label-Texten direkt in `index.html`. Bei Änderungen an den Items müssen
 **beide** Stellen synchron gehalten werden (Array in `app.js` + Markup in `index.html`) sowie
 die CSV-Exportspalten (`app.js`, `btn-export-csv`-Handler).
@@ -211,14 +211,21 @@ die CSV-Exportspalten (`app.js`, `btn-export-csv`-Handler).
   Schreibfehler nur pauschal per `try/catch` in `save()` ab und zeigt einen generischen
   Toast — kein differenziertes Verhalten bei Speicherplatzmangel.
 - Keine Datenmigration/Schema-Versionierung für `localStorage`-Inhalte (siehe oben).
-- Sensoriknummer ist hart auf den Bereich 1–12 validiert (`app.js:282`, `app.js:334`) —
+- Sensoriknummer ist hart auf den Bereich 1–12 validiert (`app.js:297`, `app.js:354`) —
   Änderung dieses Bereichs erfordert Anpassung an beiden Stellen.
 - Pseudonym ist hart auf das Format "1 Buchstabe, 4 Zahlen, 3 Buchstaben" (z. B. `P1234ABC`)
-  validiert — `PSEUDO_FORMAT_REGEX`/`isValidPseudoFormat()` in `app.js:99–100`, geprüft in
-  beiden Anlegen-/Bearbeiten-Handlern (`app.js:279`, `app.js:331`). Die Prüfung greift nur bei
-  Neuanlage/Bearbeitung; bereits vorhandene Pseudonyme in älteren `localStorage`-Datenständen,
-  die diesem Format nicht entsprechen, werden dadurch **nicht** nachträglich ungültig oder
-  verändert (keine Migration).
+  validiert — `PSEUDO_FORMAT_REGEX`/`isValidPseudoFormat()` in `app.js:99–100`. Live-Feedback
+  übernimmt `setPseudoFieldValidity()` (`app.js:104–112`): sie markiert das jeweilige
+  Eingabefeld (`#inp-pseudo`/`#edit-pseudo`) per CSS-Klasse `field-invalid` (roter Rahmen) und
+  blendet den Hinweistext `#inp-pseudo-error`/`#edit-pseudo-error` ("Format nicht korrekt")
+  ein, sobald ein nicht-leerer Wert nicht zum Format passt — ausgelöst per `input`-Listener bei
+  jedem Tastendruck sowie beim Öffnen des Bearbeiten-Dialogs und beim Klick auf Speichern
+  (`app.js:294`, `app.js:351`). Ein leeres Feld gilt bewusst nicht als ungültig (keine
+  Fehlermarkierung vor der ersten Eingabe). Die Prüfung greift nur bei Neuanlage/Bearbeitung;
+  bereits vorhandene Pseudonyme in älteren `localStorage`-Datenständen, die diesem Format nicht
+  entsprechen, werden dadurch **nicht** automatisch verändert (keine Migration) — beim Öffnen
+  des Bearbeiten-Dialogs für eine solche Person wird das Feld allerdings sofort als ungültig
+  markiert.
 - Löschen einzelner Teilnehmender/Sitzungen entfernt keine verknüpften Datensätze in anderen
   Tabellen (siehe [DATENFLUSS.md](./DATENFLUSS.md) für die Datenschutz-Implikation).
 - Manuelles Bearbeiten von Start-/Endzeit einer Sitzung (`btn-save-edit`) rechnet
