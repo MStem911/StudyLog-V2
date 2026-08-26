@@ -3,7 +3,7 @@
 // ── App Version (Single Source of Truth) ───────────────────────────────────
 // Bei jeder inhaltlichen Änderung Patch-Version erhöhen (z.B. 2.2.1 -> 2.2.2).
 // sw.js CACHE-Name manuell synchron mitziehen, damit alte Caches invalidiert werden.
-const APP_VERSION = '2.6.0';
+const APP_VERSION = '2.7.0';
 
 document.addEventListener('DOMContentLoaded', function() {
 
@@ -94,6 +94,10 @@ function uid() {
   return Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
 }
 function deepCopy(x) { return JSON.parse(JSON.stringify(x)); }
+
+// Pseudonym-Format: 1 Buchstabe, 4 Zahlen, 3 Buchstaben (z.B. "P1234ABC")
+const PSEUDO_FORMAT_REGEX = /^[A-Za-z]\d{4}[A-Za-z]{3}$/;
+function isValidPseudoFormat(pseudo) { return PSEUDO_FORMAT_REGEX.test(pseudo); }
 
 function formatTime(sec) {
   const s = Math.max(0, Math.floor(Number(sec) || 0));
@@ -272,6 +276,7 @@ function saveNewProband() {
   const anRaw  = document.getElementById('inp-sensor-an').value;
   const abRaw  = document.getElementById('inp-sensor-ab').value;
   if (!pseudo) { showToast('⚠ Pseudonym eingeben'); return; }
+  if (!isValidPseudoFormat(pseudo)) { showToast('⚠ Format ungültig (z.B. P1234ABC)'); return; }
   if (!sRaw)   { showToast('⚠ Sensoriknummer eingeben'); return; }
   const sensor = parseInt(sRaw, 10);
   if (isNaN(sensor) || sensor < 1 || sensor > 12) { showToast('⚠ Sensoriknummer 1–12'); return; }
@@ -323,6 +328,7 @@ document.getElementById('btn-save-proband-edit').addEventListener('click', () =>
   const anRaw  = document.getElementById('edit-sensor-an').value;
   const abRaw  = document.getElementById('edit-sensor-ab').value;
   if (!pseudo) { showToast('⚠ Pseudonym eingeben'); return; }
+  if (!isValidPseudoFormat(pseudo)) { showToast('⚠ Format ungültig (z.B. P1234ABC)'); return; }
   if (!sRaw)   { showToast('⚠ Sensoriknummer eingeben'); return; }
   const sensor = parseInt(sRaw, 10);
   if (isNaN(sensor) || sensor < 1 || sensor > 12) { showToast('⚠ Sensoriknummer 1–12'); return; }

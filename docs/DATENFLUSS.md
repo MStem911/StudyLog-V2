@@ -12,8 +12,8 @@ Es gibt keinen Server, kein Backend, keine Cloud-Synchronisation und keine autom
 Übertragung an Dritte. Der einzige Weg, Daten aus der App herauszubekommen, ist ein
 **manuell ausgelöster CSV/JSON-Export**, der eine Datei auf dem Gerät erzeugt.
 
-Personen werden ausschließlich unter **Pseudonym** (frei wählbarer Text, z. B. `P-042`)
-und **Sensoriknummer** (1–12) geführt. Die Zuordnung Pseudonym ↔ Klarname wird laut
+Personen werden ausschließlich unter **Pseudonym** (Format erzwungen: 1 Buchstabe, 4 Zahlen,
+3 Buchstaben, z. B. `P1234ABC`) und **Sensoriknummer** (1–12) geführt. Die Zuordnung Pseudonym ↔ Klarname wird laut
 Projekt-README **außerhalb der App**, separat bei der Studienleitung, geführt — die App
 selbst kennt diese Zuordnung nicht. Das entspricht einer Pseudonymisierung nach
 Art. 4 Nr. 5 DSGVO, **sofern** die externe Zuordnungsliste tatsächlich getrennt und

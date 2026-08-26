@@ -33,7 +33,9 @@ auf Tablet/Desktop):
 ### 1. Teilnehmende Person anlegen (einmalig pro Person)
 
 1. Im Bereich **Teilnehmende** auf **+** tippen.
-2. **Pseudonym** eingeben (z. B. `P-042`) — **kein Klarname**.
+2. **Pseudonym** eingeben — **kein Klarname**. Format ist vorgegeben: 1 Buchstabe, dann 4
+   Zahlen, dann 3 Buchstaben (z. B. `P1234ABC`). Bei falschem Format erscheint ein Hinweis
+   und das Anlegen wird abgebrochen.
 3. **Sensoriknummer** (1–12) der zugewiesenen Sensor-Einheit eingeben.
 4. Optional: Notiz eintragen (z. B. "Linkshänder").
 5. Optional: Uhrzeit "Sensorik angelegt" erfassen — per Tastatur oder Knopf "🕐 Jetzt" für

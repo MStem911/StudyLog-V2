@@ -19,7 +19,8 @@ bleiben dabei ausschließlich auf dem jeweiligen Gerät.
 - **Nutzende:** Studienleitungen / Trainer:innen, die vor Ort (z. B. an einer VR-Station)
   Sitzungen mit Teilnehmenden durchführen und protokollieren.
 - **Betroffene Personen:** Teilnehmende (Proband:innen) an VR-Trainingsszenarien, die
-  ausschließlich unter einem Pseudonym (z. B. `P-042`) und einer Sensoriknummer (1–12)
+  ausschließlich unter einem Pseudonym (festes Format: 1 Buchstabe, 4 Zahlen, 3 Buchstaben,
+  z. B. `P1234ABC`) und einer Sensoriknummer (1–12)
   geführt werden — keine Klarnamen in der App.
 - **Einsatzkontext:** Mehrere Studienleitungen nutzen die App parallel auf eigenen
   Smartphones/Tablets, jeweils unabhängig voneinander, vollständig offline. Es gibt keine
