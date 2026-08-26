@@ -3,7 +3,7 @@
 // ── App Version (Single Source of Truth) ───────────────────────────────────
 // Bei jeder inhaltlichen Änderung Patch-Version erhöhen (z.B. 2.2.1 -> 2.2.2).
 // sw.js CACHE-Name manuell synchron mitziehen, damit alte Caches invalidiert werden.
-const APP_VERSION = '2.5.0';
+const APP_VERSION = '2.6.0';
 
 document.addEventListener('DOMContentLoaded', function() {
 
@@ -39,6 +39,7 @@ let tags             = [];
 let bewertungen      = [];
 let selectedScenId   = '';
 let selectedProbandIds = [];
+let selectedBewSessionIds = [];
 let timerInterval    = null;
 let timerStart       = null;
 let timerElapsed     = 0;
@@ -52,7 +53,7 @@ let pauses           = [];
 let detailSessionId  = null;
 let editingProbandId = null;
 let confirmCallback  = null;
-let pendingBewertungSessionId = null;
+let pendingBewertungSessionIds = [];
 
 // ── Persistence ──────────────────────────────────────────────────────────────
 function save() {
@@ -652,15 +653,19 @@ document.getElementById('btn-save-session').addEventListener('click', () => {
   document.getElementById('session-notes').value = '';
   updateTimerUI();
   showToast(newSessionIds.length > 1 ? `✓ ${newSessionIds.length} Sitzungen gespeichert` : '✓ Sitzung gespeichert');
-  // Bewertungsbogen-Prompt nur anzeigen, wenn genau eine Sitzung entstanden ist
+  // Bewertungsbogen-Prompt — bei mehreren Teilnehmenden Vorschlag zur gemeinsamen Bewertung
+  pendingBewertungSessionIds = newSessionIds.slice();
   if (newSessionIds.length === 1) {
-    pendingBewertungSessionId = newSessionIds[0];
     const ps  = sessions.find(s => s.id === newSessionIds[0]);
     const sc2 = scenarios.find(x => x.id === ps.scenarioId);
     document.getElementById('bew-prompt-msg').textContent =
       `Möchtest du jetzt den Trainerbewertungsbogen für ${ps.pseudo} · ${sc2 ? sc2.abbr : ps.scenarioAbbr || '?'} ausfüllen?`;
-    document.getElementById('bew-prompt-overlay').classList.remove('hidden');
+  } else {
+    const names = newSessionIds.map(id => { const s = sessions.find(x => x.id === id); return s ? s.pseudo : '?'; }).join(', ');
+    document.getElementById('bew-prompt-msg').textContent =
+      `Möchtest du jetzt den Trainerbewertungsbogen für ${names} gemeinsam ausfüllen?`;
   }
+  document.getElementById('bew-prompt-overlay').classList.remove('hidden');
 });
 
 // ── Scenario Manager ──────────────────────────────────────────────────────────
@@ -1105,7 +1110,7 @@ document.getElementById('btn-clear-data').addEventListener('click', () => {
     'Alle Teilnehmenden, Sitzungsdaten und Bewertungen werden unwiderruflich gelöscht. Vorher exportieren!',
     () => {
       probanden = []; sessions = []; bewertungen = []; settings.lastExport = null;
-      selectedProbandIds = [];
+      selectedProbandIds = []; selectedBewSessionIds = []; pendingBewertungSessionIds = [];
       save(); renderProbanden(); renderLog(); renderExport();
       showToast('Alle Daten gelöscht');
     });
@@ -1119,7 +1124,7 @@ function renderSettingsScreen() {
 }
 document.getElementById('chk-multi-proband').addEventListener('change', e => {
   settings.multiProband = e.target.checked;
-  if (!settings.multiProband) selectedProbandIds = [];
+  if (!settings.multiProband) { selectedProbandIds = []; selectedBewSessionIds = []; }
   save();
 });
 
@@ -1133,16 +1138,22 @@ const BEW_ITEMS = ['a1','a2','a3','a4','b5','b6','b7','b8','c9','c10','d11','d12
 document.getElementById('bew-prompt-yes').addEventListener('click', () => {
   document.getElementById('bew-prompt-overlay').classList.add('hidden');
   showScreen('bewertung');
-  // Sitzung vorauswählen
-  if (pendingBewertungSessionId) {
-    const sel = document.getElementById('bew-session-select');
-    sel.value = pendingBewertungSessionId;
-    sel.dispatchEvent(new Event('change'));
+  // Sitzung(en) vorauswählen
+  if (pendingBewertungSessionIds.length) {
+    if (settings.multiProband) {
+      selectedBewSessionIds = pendingBewertungSessionIds.slice();
+      buildBewSessionMultiList();
+      updateBewertungForm();
+    } else {
+      const sel = document.getElementById('bew-session-select');
+      sel.value = pendingBewertungSessionIds[0];
+      sel.dispatchEvent(new Event('change'));
+    }
   }
 });
 document.getElementById('bew-prompt-no').addEventListener('click', () => {
   document.getElementById('bew-prompt-overlay').classList.add('hidden');
-  pendingBewertungSessionId = null;
+  pendingBewertungSessionIds = [];
   setTimeout(() => showScreen('log'), 100);
 });
 
@@ -1161,48 +1172,98 @@ function buildBewertungSessionSelect() {
       return `<option value="${esc(s.id)}">${esc(s.pseudo)} · ${sc ? esc(sc.abbr) : esc(s.scenarioAbbr || '?')} · ${esc(s.date)}${hasBew ? ' ✓' : ''}</option>`;
     }).join('');
   if (sorted.find(s => s.id === cur)) sel.value = cur;
+
+  const multiMode = !!settings.multiProband;
+  sel.classList.toggle('hidden', multiMode);
+  document.getElementById('bew-session-multi-list').classList.toggle('hidden', !multiMode);
+  if (multiMode) buildBewSessionMultiList();
   updateBewertungForm();
+}
+
+function buildBewSessionMultiList() {
+  const list = document.getElementById('bew-session-multi-list');
+  selectedBewSessionIds = selectedBewSessionIds.filter(id => sessions.some(s => s.id === id));
+  const sorted = sessions.slice().reverse();
+  if (!sorted.length) {
+    list.innerHTML = '<div style="color:var(--text3);font-size:15px">Keine Sitzungen vorhanden</div>';
+    return;
+  }
+  list.innerHTML = sorted.map(s => {
+    const sc     = scenarios.find(x => x.id === s.scenarioId);
+    const hasBew = bewertungen.some(b => b.sessionId === s.id);
+    const isSel  = selectedBewSessionIds.includes(s.id);
+    return `<button class="proband-multi-item${isSel ? ' selected' : ''}" data-id="${esc(s.id)}">
+      <span class="pm-check">${isSel ? '✓' : ''}</span>
+      <span>${esc(s.pseudo)} · ${sc ? esc(sc.abbr) : esc(s.scenarioAbbr || '?')} · ${esc(s.date)}${hasBew ? ' ✓' : ''}</span>
+    </button>`;
+  }).join('');
+  list.querySelectorAll('.proband-multi-item').forEach(btn =>
+    btn.addEventListener('click', () => {
+      const id  = btn.dataset.id;
+      const idx = selectedBewSessionIds.indexOf(id);
+      if (idx === -1) selectedBewSessionIds.push(id); else selectedBewSessionIds.splice(idx, 1);
+      buildBewSessionMultiList();
+      updateBewertungForm();
+    })
+  );
+}
+
+function getSelectedBewSessionIds() {
+  if (settings.multiProband) return selectedBewSessionIds.slice();
+  const v = document.getElementById('bew-session-select').value;
+  return v ? [v] : [];
 }
 
 document.getElementById('bew-session-select').addEventListener('change', updateBewertungForm);
 
 function updateBewertungForm() {
-  const sel       = document.getElementById('bew-session-select');
-  const sessionId = sel.value;
-  const container = document.getElementById('bew-form-container');
-  const empty     = document.getElementById('bew-empty');
-  const badge     = document.getElementById('bew-session-badge');
+  const sessionIds = getSelectedBewSessionIds();
+  const container  = document.getElementById('bew-form-container');
+  const empty      = document.getElementById('bew-empty');
+  const badge      = document.getElementById('bew-session-badge');
 
-  if (!sessionId) {
+  if (!sessionIds.length) {
     container.classList.add('hidden');
     empty.classList.remove('hidden');
     badge.classList.add('hidden');
     return;
   }
 
-  const s  = sessions.find(x => x.id === sessionId);
-  const sc = s ? scenarios.find(x => x.id === s.scenarioId) : null;
+  const selSessions = sessionIds.map(id => sessions.find(x => x.id === id)).filter(Boolean);
   empty.classList.add('hidden');
   container.classList.remove('hidden');
 
   // Badge
-  if (s) {
+  if (selSessions.length === 1) {
+    const s  = selSessions[0];
+    const sc = scenarios.find(x => x.id === s.scenarioId);
     badge.textContent = `✓  ${s.pseudo}  ·  ${sc ? sc.icon + ' ' + sc.abbr : s.scenarioAbbr || '?'}  ·  ${s.date}`;
-    badge.classList.remove('hidden');
+  } else {
+    badge.textContent = `✓  ${selSessions.length} Teilnehmende ausgewählt`;
   }
+  badge.classList.remove('hidden');
 
   // Info-Card
   const infoCard = document.getElementById('bew-info-card');
-  const hasBew = bewertungen.some(b => b.sessionId === sessionId);
-  infoCard.innerHTML = hasBew
-    ? `<div class="bew-existing-hint">⚠ Für diese Sitzung existiert bereits eine Bewertung. Speichern überschreibt diese.</div>`
-    : `<div class="bew-new-hint">Neue Bewertung für: <strong>${esc(s ? s.pseudo : '')} · ${esc(sc ? sc.name : s ? s.scenarioName || '?' : '?')}</strong></div>`;
+  const hasBewAny = selSessions.some(s => bewertungen.some(b => b.sessionId === s.id));
+  if (selSessions.length === 1) {
+    const s  = selSessions[0];
+    const sc = scenarios.find(x => x.id === s.scenarioId);
+    infoCard.innerHTML = hasBewAny
+      ? `<div class="bew-existing-hint">⚠ Für diese Sitzung existiert bereits eine Bewertung. Speichern überschreibt diese.</div>`
+      : `<div class="bew-new-hint">Neue Bewertung für: <strong>${esc(s.pseudo)} · ${esc(sc ? sc.name : s.scenarioName || '?')}</strong></div>`;
+  } else {
+    const names = selSessions.map(s => esc(s.pseudo)).join(', ');
+    infoCard.innerHTML =
+      `<div class="bew-new-hint">Gemeinsame Bewertung für: <strong>${names}</strong></div>` +
+      (hasBewAny ? `<div class="bew-existing-hint">⚠ Für mindestens eine dieser Sitzungen existiert bereits eine Bewertung. Speichern überschreibt diese.</div>` : '');
+  }
 
   // Skalen neu rendern
   BEW_ITEMS.forEach(key => renderBewScale(key));
 
-  // Bestehende Bewertung laden falls vorhanden
-  const existing = bewertungen.find(b => b.sessionId === sessionId);
+  // Bestehende Bewertung vorbefüllen — nur eindeutig bei genau einer ausgewählten Sitzung möglich
+  const existing = selSessions.length === 1 ? bewertungen.find(b => b.sessionId === selSessions[0].id) : null;
   if (existing) {
     BEW_ITEMS.forEach(key => {
       const val = existing.scores[key];
@@ -1253,8 +1314,8 @@ function getBewScores() {
 }
 
 document.getElementById('btn-save-bewertung').addEventListener('click', () => {
-  const sessionId = document.getElementById('bew-session-select').value;
-  if (!sessionId) { showToast('⚠ Sitzung wählen'); return; }
+  const sessionIds = getSelectedBewSessionIds();
+  if (!sessionIds.length) { showToast('⚠ Sitzung wählen'); return; }
   const scores = getBewScores();
   const filled = Object.values(scores).filter(v => v !== null).length;
   if (filled === 0) { showToast('⚠ Mindestens eine Bewertung eingeben'); return; }
@@ -1262,42 +1323,47 @@ document.getElementById('btn-save-bewertung').addEventListener('click', () => {
   if (filled < BEW_ITEMS.length) {
     showConfirm('Nicht vollständig ausgefüllt',
       `Es sind erst ${filled} von ${BEW_ITEMS.length} Bewertungen eingetragen. Trotzdem speichern?`,
-      () => saveBewertung(sessionId, scores));
+      () => saveBewertung(sessionIds, scores));
   } else {
-    saveBewertung(sessionId, scores);
+    saveBewertung(sessionIds, scores);
   }
 });
 
-function saveBewertung(sessionId, scores) {
-  const s  = sessions.find(x => x.id === sessionId);
-  const sc = s ? scenarios.find(x => x.id === s.scenarioId) : null;
+// Speichert dieselben Bewertungswerte für eine oder mehrere Sitzungen (gemeinsamer Bewertungsbogen
+// bei mehreren Teilnehmenden) — analog zum Muster bei der Sitzungsaufzeichnung erhält jede Sitzung
+// einen eigenständigen bewertungen-Eintrag, es gibt kein neues Gruppen-/Relations-Konzept.
+function saveBewertung(sessionIds, scores) {
   const notes = document.getElementById('bew-notes').value.trim();
+  let updatedCount = 0, createdCount = 0;
 
-  // Bestehende überschreiben oder neu anlegen
-  const existingIdx = bewertungen.findIndex(b => b.sessionId === sessionId);
-  const entry = {
-    id:           existingIdx >= 0 ? bewertungen[existingIdx].id : uid(),
-    sessionId,
-    pseudo:       s  ? s.pseudo       : '?',
-    sensor:       s  ? s.sensor       : '?',
-    scenarioId:   s  ? s.scenarioId   : '?',
-    scenarioName: sc ? sc.name        : (s ? s.scenarioName || '?' : '?'),
-    scenarioAbbr: sc ? sc.abbr        : (s ? s.scenarioAbbr || '?' : '?'),
-    date:         s  ? s.date         : '?',
-    scores, notes,
-    savedAt:      new Date().toISOString()
-  };
+  sessionIds.forEach(sessionId => {
+    const s  = sessions.find(x => x.id === sessionId);
+    const sc = s ? scenarios.find(x => x.id === s.scenarioId) : null;
+    const existingIdx = bewertungen.findIndex(b => b.sessionId === sessionId);
+    const entry = {
+      id:           existingIdx >= 0 ? bewertungen[existingIdx].id : uid(),
+      sessionId,
+      pseudo:       s  ? s.pseudo       : '?',
+      sensor:       s  ? s.sensor       : '?',
+      scenarioId:   s  ? s.scenarioId   : '?',
+      scenarioName: sc ? sc.name        : (s ? s.scenarioName || '?' : '?'),
+      scenarioAbbr: sc ? sc.abbr        : (s ? s.scenarioAbbr || '?' : '?'),
+      date:         s  ? s.date         : '?',
+      scores, notes,
+      savedAt:      new Date().toISOString()
+    };
+    if (existingIdx >= 0) { bewertungen[existingIdx] = entry; updatedCount++; }
+    else { bewertungen.push(entry); createdCount++; }
+  });
 
-  if (existingIdx >= 0) {
-    bewertungen[existingIdx] = entry;
-    showToast('✓ Bewertung aktualisiert');
+  if (sessionIds.length > 1) {
+    showToast(`✓ ${sessionIds.length} Bewertungen gespeichert`);
   } else {
-    bewertungen.push(entry);
-    showToast('✓ Bewertung gespeichert');
+    showToast(updatedCount ? '✓ Bewertung aktualisiert' : '✓ Bewertung gespeichert');
   }
   save();
-  buildBewertungSessionSelect(); // Haken in Dropdown aktualisieren
-  pendingBewertungSessionId = null;
+  buildBewertungSessionSelect(); // Haken in Dropdown/Liste aktualisieren
+  pendingBewertungSessionIds = [];
 }
 
 document.getElementById('btn-clear-bewertung').addEventListener('click', () => {

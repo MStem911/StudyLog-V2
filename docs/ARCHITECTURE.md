@@ -52,7 +52,7 @@ Event-Listener leben in diesem einen Closure-Scope; es gibt keine Module/Imports
 UI-/Timer-State wie `sessionRunning`, `selectedScenId`, `detailSessionId`). Zwei zentrale
 Funktionen synchronisieren diesen State mit `localStorage`:
 
-- **`load()`** — beim Start einmal aufgerufen (`app.js:1143`), liest alle sechs
+- **`load()`** — beim Start einmal aufgerufen (`app.js:1385`), liest alle sechs
   `localStorage`-Keys, parsed JSON, füllt fehlende/leere Konfigurationslisten
   (`scenarios`, `tags`) mit Defaults auf.
 - **`save()`** — nach **jeder** datenverändernden Aktion aufgerufen, schreibt alle sechs
@@ -65,7 +65,7 @@ neuen Feldern, die betroffene State-Variable (z. B. ein Objekt in `probanden`) z
 es muss keine Migration/Schema-Version gepflegt werden. Es gibt **keine
 Schema-Versionierung** von `localStorage`-Daten; neue Felder müssen daher stets mit
 `undefined`/`null`-Fallbacks für Alt-Daten umgehen können (siehe z. B. `p.sensorAngelegtISO
-|| p.createdAt` in `app.js:323`).
+|| p.createdAt` in `app.js:331`).
 
 ### `localStorage`-Keys und Datenmodelle
 
@@ -95,7 +95,7 @@ Beachte: `sessions`- und `bewertungen`-Einträge speichern `pseudo`/`sensor`/`sc
 Referenz zu halten). Das ist bewusst so gebaut, damit Protokolle auch nach Löschen einer
 Person oder eines Szenarios noch lesbar bleiben — hat aber zur Folge, dass ein nachträgliches
 Umbenennen eines Szenarios bestehende Sitzungen **nicht** rückwirkend aktualisiert (bei
-Personen-Umbenennung dagegen schon, siehe `btn-save-proband-edit`-Handler in `app.js:308`,
+Personen-Umbenennung dagegen schon, siehe `btn-save-proband-edit`-Handler in `app.js:316`,
 der `sessions` aktiv nachzieht). TODO: bei künftigen Änderungen an Szenario-Edit-Funktion
 beachten, falls eine Bearbeitungsmöglichkeit für Szenarien ergänzt wird (aktuell gibt es nur
 Anlegen/Löschen/Reihenfolge ändern, kein Umbenennen bestehender Szenarien).
@@ -109,7 +109,25 @@ unabhängiger `sessions`-Eintrag mit eigener `id` erzeugt, alle mit identischem
 `startISO`/`endISO`/`duration_s`/`pauses[]`/`scenarioId`/`deviations`/`notes`. Es existiert
 also keine Gruppierungs-ID zwischen diesen Einträgen; ein Zusammenhang ist nur implizit über
 identische Zeitstempel/Szenario erkennbar. Der Bewertungsbogen-Prompt nach dem Speichern
-erscheint nur, wenn genau eine Sitzung entstanden ist (`newSessionIds.length === 1`).
+erscheint immer und schlägt bei mehreren entstandenen Sitzungen eine **gemeinsame** Bewertung
+vor (Text unterscheidet Singular/Plural je nach `newSessionIds.length`).
+
+**Gemeinsame Bewertung mehrerer Teilnehmender (Bewertungsbogen):** Ist `settings.multiProband`
+aktiv, erlaubt auch der Bewertungsscreen die Auswahl mehrerer Sitzungen gleichzeitig
+(State-Array `selectedBewSessionIds`, UI in `#bew-session-multi-list` statt des
+`<select id="bew-session-select">` — analog zur Teilnehmenden-Mehrfachauswahl bei der
+Sitzungsaufzeichnung, siehe `getSelectedBewSessionIds()`). Auch hier gibt es **kein** neues
+Datenmodell: `saveBewertung()` legt für **jede** ausgewählte Sitzung einen eigenen,
+unabhängigen `bewertungen`-Eintrag mit identischen `scores`/`notes` an (Überschreiben einer
+bereits vorhandenen Bewertung pro Sitzung einzeln). Eine Vorbefüllung mit bereits vorhandenen
+Bewertungswerten (beim erneuten Öffnen einer Sitzung) findet nur statt, wenn genau **eine**
+Sitzung ausgewählt ist — bei Mehrfachauswahl wäre eine Vorbefüllung aus mehreren
+möglicherweise unterschiedlichen Alt-Bewertungen nicht eindeutig, daher startet das Formular
+dann leer. Nach dem Speichern einer Sitzungsaufzeichnung mit mehreren Teilnehmenden wird
+`pendingBewertungSessionIds` (Array, ersetzt das frühere `pendingBewertungSessionId`) mit allen
+neu erzeugten Sitzungs-IDs vorbelegt; klickt man im Prompt auf "Ja", werden diese Sitzungen im
+Bewertungsscreen automatisch vorausgewählt (Mehrfachauswahl-Modus) bzw. die einzelne Sitzung im
+Dropdown vorausgewählt (Einzel-Modus).
 
 ## Modul-Verantwortlichkeiten in `app.js` (in Dateireihenfolge)
 
@@ -119,14 +137,14 @@ erscheint nur, wenn genau eine Sitzung entstanden ist (`newSessionIds.length ===
 | Persistence | 52–90 | `save()`, `load()` |
 | Utilities | 86–142 | `uid()`, Datum/Zeit-Formatierung (`formatTime`, `localTimeStr`, `isoToTimeInput`, `rebuildISO`), `esc()` (HTML-Escaping gegen XSS beim Rendern von Nutzereingaben), `showToast()` |
 | Confirm Dialog | 144–159 | Generischer Bestätigungsdialog (`showConfirm`), von mehreren Lösch-Aktionen wiederverwendet |
-| Navigation | 166–217 | `showScreen()` (Screen-Wechsel + Re-Render des Zielscreens), Nav-Button-Listener |
-| TEILNEHMENDE | 219–362 | Liste rendern/filtern, Anlegen, Bearbeiten, Löschen von Personen |
-| SESSION | 364–~799 | Szenario-Auswahl, Teilnehmenden-Auswahl (Einzel- **und** Mehrfachauswahl je nach `settings.multiProband`, `getSelectedProbandIds()`), Start/Pause/Fortsetzen/Stopp-Timer (`startTimer`, `pauseTimer`, `resumeTimer`, `stopTimer`), Tag-Zeilen, Sitzung speichern (ggf. mehrere Einträge bei Mehrfachauswahl), Szenario-/Tag-Manager (CRUD für Konfiguration) |
-| LOG | 799–1003 | Sitzungsliste mit Filtern, Detailansicht, Bearbeiten, Löschen |
-| EXPORT | 1003–1114 | Statistiken, CSV-/JSON-Export, Geräte-Label |
-| EINSTELLUNGEN | 1114–1126 | `renderSettingsScreen()`, Toggle "Mehrere Teilnehmende gleichzeitig" (`settings.multiProband`), "Alle Daten löschen" (`btn-clear-data`) |
-| BEWERTUNGSBOGEN | 1126–1318 | Post-Session-Prompt, Sitzungsauswahl, 19 Bewertungsskalen (1–6), Speichern/Überschreiben |
-| INIT | 1318–1331 | Startsequenz: `load()`, initiales Rendering aller Screens, Versionsanzeige |
+| Navigation | 167–218 | `showScreen()` (Screen-Wechsel + Re-Render des Zielscreens), Nav-Button-Listener |
+| TEILNEHMENDE | 220–363 | Liste rendern/filtern, Anlegen, Bearbeiten, Löschen von Personen |
+| SESSION | 365–~800 | Szenario-Auswahl, Teilnehmenden-Auswahl (Einzel- **und** Mehrfachauswahl je nach `settings.multiProband`, `getSelectedProbandIds()`), Start/Pause/Fortsetzen/Stopp-Timer (`startTimer`, `pauseTimer`, `resumeTimer`, `stopTimer`), Tag-Zeilen, Sitzung speichern (ggf. mehrere Einträge bei Mehrfachauswahl), Szenario-/Tag-Manager (CRUD für Konfiguration) |
+| LOG | 800–1004 | Sitzungsliste mit Filtern, Detailansicht, Bearbeiten, Löschen |
+| EXPORT | 1004–1115 | Statistiken, CSV-/JSON-Export, Geräte-Label |
+| EINSTELLUNGEN | 1119–1131 | `renderSettingsScreen()`, Toggle "Mehrere Teilnehmende gleichzeitig" (`settings.multiProband`), "Alle Daten löschen" (`btn-clear-data`) |
+| BEWERTUNGSBOGEN | 1131–1384 | Post-Session-Prompt (inkl. Vorschlag zur gemeinsamen Bewertung bei mehreren Teilnehmenden), Sitzungsauswahl (Einzel- **und** Mehrfachauswahl je nach `settings.multiProband`, `getSelectedBewSessionIds()`), 19 Bewertungsskalen (1–6), Speichern/Überschreiben (ggf. mehrere Einträge bei Mehrfachauswahl) |
+| INIT | 1384–1397 | Startsequenz: `load()`, initiales Rendering aller Screens, Versionsanzeige |
 
 ## Konventionen im Code
 
@@ -180,7 +198,7 @@ Listener-Registrierungen (`.nav-btn` und `.nav-item`), die beide `showScreen()` 
 (ungenügend). Item-Keys: `a1–a4` (Lageerkundung), `b5–b8` (Entscheidungsqualität), `c9–c10`
 (Führung/Kommunikation), `d11–d12` (Struktur/Effizienz), `e13, e15, e16` (Umsetzung
 Lehrgangsinhalte — **Nummer 14 ist im Quellbogen bewusst ausgelassen**, kein Bug), `z17–z20`
-(Zusatzblock: subjektiver Leistungsvergleich). Definiert in `BEW_ITEMS` (`app.js:960`) und
+(Zusatzblock: subjektiver Leistungsvergleich). Definiert in `BEW_ITEMS` (`app.js:1135`) und
 den zugehörigen Label-Texten direkt in `index.html`. Bei Änderungen an den Items müssen
 **beide** Stellen synchron gehalten werden (Array in `app.js` + Markup in `index.html`) sowie
 die CSV-Exportspalten (`app.js`, `btn-export-csv`-Handler).
@@ -193,7 +211,7 @@ die CSV-Exportspalten (`app.js`, `btn-export-csv`-Handler).
   Schreibfehler nur pauschal per `try/catch` in `save()` ab und zeigt einen generischen
   Toast — kein differenziertes Verhalten bei Speicherplatzmangel.
 - Keine Datenmigration/Schema-Versionierung für `localStorage`-Inhalte (siehe oben).
-- Sensoriknummer ist hart auf den Bereich 1–12 validiert (`app.js:269`, `app.js:320`) —
+- Sensoriknummer ist hart auf den Bereich 1–12 validiert (`app.js:277`, `app.js:328`) —
   Änderung dieses Bereichs erfordert Anpassung an beiden Stellen.
 - Löschen einzelner Teilnehmender/Sitzungen entfernt keine verknüpften Datensätze in anderen
   Tabellen (siehe [DATENFLUSS.md](./DATENFLUSS.md) für die Datenschutz-Implikation).

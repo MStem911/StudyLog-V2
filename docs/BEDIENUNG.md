@@ -26,7 +26,7 @@ auf Tablet/Desktop):
 | ☰ **Protokoll** | Übersicht aller gespeicherten Sitzungen, filtern, bearbeiten, löschen |
 | 📝 **Bewertung** | Trainerbewertungsbogen zu einer Sitzung ausfüllen |
 | ↓ **Export** | Daten als CSV/JSON exportieren, Statistiken einsehen |
-| ⚙ **Einstellungen** | App-Verhalten anpassen (z. B. Mehrfachauswahl), alle Daten löschen |
+| ⚙ **Einstellungen** | App-Verhalten anpassen (z. B. Mehrfachauswahl von Teilnehmenden bei Sitzung **und** Bewertung), alle Daten löschen |
 
 ## Typischer Ablauf einer Nutzungssitzung
 
@@ -60,11 +60,13 @@ auf Tablet/Desktop):
    **Abweichungs-Tags** antippen (z. B. "Techn. Fehler") und/oder eine Freitextnotiz
    eintragen.
 7. Mit **💾 Sitzung speichern** abschließen.
-8. War nur eine Person ausgewählt, fragt die App danach, ob direkt der
-   **Trainerbewertungsbogen** für diese Sitzung ausgefüllt werden soll (siehe Schritt 3) —
-   kann auch später über den Bereich **Bewertung** nachgeholt werden. Bei mehreren
-   gleichzeitig ausgewählten Personen entfällt diese Rückfrage; die Bewertungsbögen können
-   im Bereich **Bewertung** einzeln je Person nachgeholt werden.
+8. Die App fragt danach, ob direkt der **Trainerbewertungsbogen** ausgefüllt werden soll
+   (siehe Schritt 3) — kann auch später über den Bereich **Bewertung** nachgeholt werden.
+   War nur eine Person ausgewählt, bezieht sich der Bogen auf diese eine Sitzung. Wurden
+   mehrere Personen gleichzeitig ausgewählt, schlägt die App vor, alle gemeinsam in **einem**
+   Bewertungsbogen zu bewerten (die eingetragenen Noten/Anmerkungen werden dann identisch in
+   die jeweils eigenständige Bewertung jeder Person übernommen) — eine getrennte
+   Einzelbewertung je Person bleibt über den Bereich **Bewertung** weiterhin möglich.
 
 **Wichtig:** Wird nach dem Stoppen erneut **▶ Start** gedrückt, ohne vorher zu speichern,
 fragt die App zur Sicherheit nach ("Aufzeichnung verwerfen?"), bevor die noch nicht
@@ -73,14 +75,21 @@ gespeicherte Aufzeichnung durch die neue Sitzung überschrieben wird.
 ### 3. Trainerbewertungsbogen ausfüllen (optional, pro Sitzung)
 
 1. Im Bereich **Bewertung** die gewünschte Sitzung im Dropdown auswählen (bereits bewertete
-   Sitzungen sind mit ✓ markiert).
+   Sitzungen sind mit ✓ markiert). Ist unter **⚙ Einstellungen** die Option "Mehrere
+   Teilnehmende gleichzeitig" aktiviert, erscheint stattdessen eine Liste zum Antippen
+   mehrerer Sitzungen — so lassen sich mehrere Teilnehmende in **einem** gemeinsamen Bogen
+   bewerten (z. B. wenn sie dasselbe Szenario gemeinsam durchlaufen haben). Beim
+   Vorbefüllen mit einer bereits vorhandenen Bewertung ist das nur bei Auswahl einer
+   einzelnen Sitzung möglich; bei Mehrfachauswahl startet der Bogen leer.
 2. Für jede der 19 Bewertungsfragen eine Note von **1 (sehr gut)** bis **6 (ungenügend)**
    vergeben.
 3. Optional Anmerkungen eintragen.
-4. Mit **💾 Bewertung speichern** abschließen. Erneutes Speichern für dieselbe Sitzung
-   überschreibt die vorherige Bewertung. Sind noch nicht alle 19 Fragen beantwortet, fragt
-   die App vor dem Speichern nach ("Trotzdem speichern?" / "Abbrechen") — so bleibt die
-   unvollständige Bewertung nicht versehentlich als vermeintlich fertig stehen.
+4. Mit **💾 Bewertung speichern** abschließen. Bei Mehrfachauswahl werden dieselben Noten und
+   Anmerkungen als **eigenständige** Bewertung für jede ausgewählte Sitzung gespeichert.
+   Erneutes Speichern für eine bereits bewertete Sitzung überschreibt deren vorherige
+   Bewertung. Sind noch nicht alle 19 Fragen beantwortet, fragt die App vor dem Speichern
+   nach ("Trotzdem speichern?" / "Abbrechen") — so bleibt die unvollständige Bewertung nicht
+   versehentlich als vermeintlich fertig stehen.
 
 ### 4. Sitzung im Protokoll prüfen oder korrigieren
 
