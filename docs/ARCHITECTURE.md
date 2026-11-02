@@ -213,18 +213,22 @@ die CSV-Exportspalten (`app.js`, `btn-export-csv`-Handler).
 - Keine Datenmigration/Schema-Versionierung für `localStorage`-Inhalte (siehe oben).
 - Sensoriknummer ist hart auf den Bereich 1–12 validiert (`app.js:297`, `app.js:354`) —
   Änderung dieses Bereichs erfordert Anpassung an beiden Stellen.
-- Pseudonym ist hart auf das Format "1 Buchstabe, 4 Zahlen, 3 Buchstaben" (z. B. `P1234ABC`)
-  validiert — `PSEUDO_FORMAT_REGEX`/`isValidPseudoFormat()` in `app.js:99–100`. Live-Feedback
-  übernimmt `setPseudoFieldValidity()` (`app.js:104–112`): sie markiert das jeweilige
-  Eingabefeld (`#inp-pseudo`/`#edit-pseudo`) per CSS-Klasse `field-invalid` (roter Rahmen) und
-  blendet den Hinweistext `#inp-pseudo-error`/`#edit-pseudo-error` ("Format nicht korrekt")
-  ein, sobald ein nicht-leerer Wert nicht zum Format passt — ausgelöst per `input`-Listener bei
-  jedem Tastendruck sowie beim Öffnen des Bearbeiten-Dialogs und beim Klick auf Speichern
-  (`app.js:294`, `app.js:351`). Ein leeres Feld gilt bewusst nicht als ungültig (keine
-  Fehlermarkierung vor der ersten Eingabe). Die Prüfung greift nur bei Neuanlage/Bearbeitung;
-  bereits vorhandene Pseudonyme in älteren `localStorage`-Datenständen, die diesem Format nicht
-  entsprechen, werden dadurch **nicht** automatisch verändert (keine Migration) — beim Öffnen
-  des Bearbeiten-Dialogs für eine solche Person wird das Feld allerdings sofort als ungültig
+- Pseudonym-Format "1 Buchstabe, 4 Zahlen, 3 Buchstaben" (z. B. `P1234ABC`) wird per
+  `PSEUDO_FORMAT_REGEX`/`isValidPseudoFormat()` in `app.js:99–100` geprüft, aber **nicht hart
+  erzwungen** — die Prüfung ist reine Warnung, Speichern/Anlegen ist auch bei falschem Format
+  möglich (seit v2.7.2; vorher blockierend). Live-Feedback übernimmt `setPseudoFieldValidity()`
+  (`app.js:104–112`): sie markiert das jeweilige Eingabefeld (`#inp-pseudo`/`#edit-pseudo`) per
+  CSS-Klasse `field-invalid` (roter Rahmen) und blendet den Hinweistext
+  `#inp-pseudo-error`/`#edit-pseudo-error` ("Format nicht korrekt") ein, sobald ein nicht-leerer
+  Wert nicht zum Format passt — ausgelöst per `input`-Listener bei jedem Tastendruck sowie beim
+  Öffnen des Bearbeiten-Dialogs. Beim Klick auf Speichern (`app.js:294`, `app.js:351`) wird das
+  Ergebnis in `formatOk` zwischengespeichert; ist es `false`, wird trotzdem gespeichert und
+  stattdessen ein Hinweis-Toast ("⚠ ... Format ungültig") statt des normalen Erfolgs-Toasts
+  gezeigt. Ein leeres Feld gilt bewusst nicht als ungültig (keine Fehlermarkierung vor der
+  ersten Eingabe). Die Prüfung greift nur bei Neuanlage/Bearbeitung; bereits vorhandene
+  Pseudonyme in älteren `localStorage`-Datenständen, die diesem Format nicht entsprechen,
+  werden dadurch **nicht** automatisch verändert (keine Migration) — beim Öffnen des
+  Bearbeiten-Dialogs für eine solche Person wird das Feld allerdings sofort als ungültig
   markiert.
 - Löschen einzelner Teilnehmender/Sitzungen entfernt keine verknüpften Datensätze in anderen
   Tabellen (siehe [DATENFLUSS.md](./DATENFLUSS.md) für die Datenschutz-Implikation).
