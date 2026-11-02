@@ -14,7 +14,9 @@ Es gibt keinen Server, kein Backend, keine Cloud-Synchronisation und keine autom
 
 Personen werden ausschließlich unter **Pseudonym** (vorgegebenes, aber nicht erzwungenes Format:
 1 Buchstabe, 4 Zahlen, 3 Buchstaben, z. B. `P1234ABC` — bei Abweichung nur Warnhinweis, Speichern
-bleibt möglich) und **Sensoriknummer** (1–12) geführt. Die Zuordnung Pseudonym ↔ Klarname wird laut
+bleibt möglich) und **Sensoriknummer** (vorgegebener, aber ebenfalls nicht erzwungener Bereich
+1–12 — bei Abweichung oder Mehrfachvergabe nur Warnhinweis, Speichern bleibt möglich) geführt.
+Die Zuordnung Pseudonym ↔ Klarname wird laut
 Projekt-README **außerhalb der App**, separat bei der Studienleitung, geführt — die App
 selbst kennt diese Zuordnung nicht. Das entspricht einer Pseudonymisierung nach
 Art. 4 Nr. 5 DSGVO, **sofern** die externe Zuordnungsliste tatsächlich getrennt und

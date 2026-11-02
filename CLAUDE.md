@@ -49,6 +49,13 @@ Bei **jedem Commit, der Funktionalität/Inhalt ändert** (nicht bei reinen Doku-
   lässt unsichtbare Elemente Klicks blockieren.
 - Alles JS in `DOMContentLoaded` wrappen (sonst iOS-PWA-Button-Fails).
 - Delete-Bug-Muster: IDs vor dem Nullen in `const` zwischenspeichern.
+- Sitzungsaufzeichnung: Teilnehmende-/Szenario-Auswahl darf NICHT als einfache, live lesbare
+  globale Variable behandelt werden, die erst beim Speichern ausgelesen wird — sonst kann
+  Weiterklicken während einer laufenden Aufzeichnung die Sitzung der falschen Person/dem
+  falschen Szenario zuordnen (passierte bis v2.7.2). Fix seit v2.7.3: Auswahl wird bei
+  `beginTimer()` in `recordingProbandIds`/`recordingScenId` eingefroren, nur diese werden beim
+  Speichern verwendet; zusätzlich sperrt `setSessionControlsLocked()` die Auswahl-UI, solange
+  die Aufzeichnung läuft (siehe `docs/ARCHITECTURE.md`).
 
 ## Git-Workflow in dieser Umgebung
 Der verbundene Ordner läuft über eine Sandbox-Bridge, die zwar Dateien schreiben, aber keine

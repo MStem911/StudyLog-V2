@@ -38,7 +38,9 @@ auf Tablet/Desktop):
    Feld sofort rot markiert mit dem Hinweis "Format nicht korrekt" darunter. Anlegen/Speichern
    ist trotzdem möglich — die Warnung blockiert nicht, es erscheint dann nur ein zusätzlicher
    Hinweis-Toast ("Format ungültig") nach dem Speichern.
-3. **Sensoriknummer** (1–12) der zugewiesenen Sensor-Einheit eingeben.
+3. **Sensoriknummer** (1–12) der zugewiesenen Sensor-Einheit eingeben. Ist die Nummer bereits
+   an eine andere Person vergeben oder liegt außerhalb 1–12, wird das Feld ebenfalls rot
+   markiert — auch das blockiert das Anlegen nicht, es erscheint nur ein Hinweis-Toast.
 4. Optional: Notiz eintragen (z. B. "Linkshänder").
 5. Optional: Uhrzeit "Sensorik angelegt" erfassen — per Tastatur oder Knopf "🕐 Jetzt" für
    die aktuelle Uhrzeit.
@@ -53,7 +55,12 @@ auf Tablet/Desktop):
    jede ausgewählte Person eine eigene, unabhängige Sitzungsaufzeichnung mit identischer
    Start-/Endzeit.
 2. Passendes **Szenario** antippen (z. B. VR Welt, Verkehrsunfall, Krankenhaus).
-3. **▶ Start** drücken, sobald das Szenario beginnt — der Timer läuft.
+3. **▶ Start** drücken, sobald das Szenario beginnt — der Timer läuft. Ab diesem Moment sind
+   die Teilnehmenden- und die Szenario-Auswahl **gesperrt** (grau, mit Hinweis "🔒 Gesperrt,
+   solange die Aufzeichnung läuft") und können erst nach **⏹ Stopp** wieder geändert werden.
+   Das verhindert, dass eine laufende Aufzeichnung durch versehentliches Weiterklicken (z. B.
+   beim Vorbereiten der nächsten Person/des nächsten Szenarios) am Ende der falschen Person
+   oder dem falschen Szenario zugeordnet wird.
 4. Falls die Sitzung unterbrochen werden muss (z. B. technische Störung, Rückfrage):
    **⏸ Pause** drücken — der Timer friert ein. Mit **▶ Fortsetzen** läuft er weiter, ab
    dem eingefrorenen Stand. Jede Pause wird mit genauer Start-/Endzeit und Dauer
@@ -74,7 +81,11 @@ auf Tablet/Desktop):
 
 **Wichtig:** Wird nach dem Stoppen erneut **▶ Start** gedrückt, ohne vorher zu speichern,
 fragt die App zur Sicherheit nach ("Aufzeichnung verwerfen?"), bevor die noch nicht
-gespeicherte Aufzeichnung durch die neue Sitzung überschrieben wird.
+gespeicherte Aufzeichnung durch die neue Sitzung überschrieben wird. Nach dem Stoppen (vor dem
+Speichern) ist die Teilnehmenden-/Szenario-Auswahl bewusst wieder bedienbar — z. B. um schon
+die nächste Person oder das nächste Szenario vorzubereiten. **💾 Sitzung speichern** sichert
+dabei trotzdem immer die Person/das Szenario, mit der/dem tatsächlich aufgezeichnet wurde
+(siehe Timer-Anzeige), unabhängig davon, was danach schon wieder angetippt wurde.
 
 ### 3. Trainerbewertungsbogen ausfüllen (optional, pro Sitzung)
 

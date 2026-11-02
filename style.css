@@ -412,6 +412,12 @@ input.field-invalid:focus { border-color: var(--coral); }
 .field-error {
   color: var(--coral-txt); font-size: var(--text-sm); margin-top: 4px;
 }
+.lock-hint {
+  color: var(--text3); font-size: var(--text-sm); margin-top: 10px;
+}
+select:disabled, .scenario-btn:disabled, .proband-multi-item:disabled {
+  opacity: 0.5; cursor: not-allowed;
+}
 textarea { resize: vertical; line-height: 1.5; min-height: 72px; }
 
 select {

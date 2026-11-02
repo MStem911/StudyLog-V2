@@ -3,7 +3,7 @@
 // ── App Version (Single Source of Truth) ───────────────────────────────────
 // Bei jeder inhaltlichen Änderung Patch-Version erhöhen (z.B. 2.2.1 -> 2.2.2).
 // sw.js CACHE-Name manuell synchron mitziehen, damit alte Caches invalidiert werden.
-const APP_VERSION = '2.7.2';
+const APP_VERSION = '2.7.3';
 
 document.addEventListener('DOMContentLoaded', function() {
 
@@ -39,6 +39,10 @@ let tags             = [];
 let bewertungen      = [];
 let selectedScenId   = '';
 let selectedProbandIds = [];
+// Bei Start der Aufzeichnung eingefrorene Auswahl — maßgeblich für das Speichern, NICHT die
+// Live-Auswahl in Dropdown/Grid (die während der Aufzeichnung gesperrt ist, s. setSessionControlsLocked).
+let recordingProbandIds = [];
+let recordingScenId     = '';
 let selectedBewSessionIds = [];
 let timerInterval    = null;
 let timerStart       = null;
@@ -106,6 +110,24 @@ function setPseudoFieldValidity(inputId, errorId) {
   const errorEl = document.getElementById(errorId);
   const pseudo  = input.value.trim();
   const invalid = pseudo.length > 0 && !isValidPseudoFormat(pseudo);
+  input.classList.toggle('field-invalid', invalid);
+  errorEl.classList.toggle('hidden', !invalid);
+  return !invalid;
+}
+
+// Live-Validierung Sensoriknummer: markiert rot, wenn außerhalb 1–12 oder bereits an eine
+// andere Person vergeben — blockiert das Speichern aber NICHT (analog zum Pseudonym-Format).
+// excludeId: Proband-ID, die bei der Doppel-Vergabe-Prüfung ignoriert wird (beim Bearbeiten
+// die eigene ID, sonst null).
+function setSensorFieldValidity(inputId, errorId, excludeId) {
+  const input   = document.getElementById(inputId);
+  const errorEl = document.getElementById(errorId);
+  const raw     = input.value.trim();
+  const sensor  = parseInt(raw, 10);
+  const invalid = raw.length > 0 && !isNaN(sensor) && (
+    sensor < 1 || sensor > 12 ||
+    probanden.some(p => p.id !== excludeId && String(p.sensor) === String(sensor))
+  );
   input.classList.toggle('field-invalid', invalid);
   errorEl.classList.toggle('hidden', !invalid);
   return !invalid;
@@ -283,6 +305,9 @@ document.getElementById('btn-save-proband').addEventListener('click', saveNewPro
 document.getElementById('inp-pseudo').addEventListener('input', () =>
   setPseudoFieldValidity('inp-pseudo', 'inp-pseudo-error')
 );
+document.getElementById('inp-sensor').addEventListener('input', () =>
+  setSensorFieldValidity('inp-sensor', 'inp-sensor-error', null)
+);
 
 function saveNewProband() {
   const pseudo = document.getElementById('inp-pseudo').value.trim();
@@ -294,8 +319,8 @@ function saveNewProband() {
   const formatOk = setPseudoFieldValidity('inp-pseudo', 'inp-pseudo-error');
   if (!sRaw)   { showToast('⚠ Sensoriknummer eingeben'); return; }
   const sensor = parseInt(sRaw, 10);
-  if (isNaN(sensor) || sensor < 1 || sensor > 12) { showToast('⚠ Sensoriknummer 1–12'); return; }
-  if (probanden.some(p => String(p.sensor) === String(sensor))) { showToast('⚠ SNR ' + sensor + ' vergeben'); return; }
+  if (isNaN(sensor)) { showToast('⚠ Sensoriknummer muss eine Zahl sein'); return; }
+  const sensorOk = setSensorFieldValidity('inp-sensor', 'inp-sensor-error', null);
   if (probanden.some(p => p.pseudo.toLowerCase() === pseudo.toLowerCase())) { showToast('⚠ Pseudonym vergeben'); return; }
   const nowISO = new Date().toISOString();
   const sensorAngelegtISO = anRaw ? rebuildISO(nowISO, anRaw) : null;
@@ -305,11 +330,16 @@ function saveNewProband() {
   clearAddForm();
   document.getElementById('add-form').classList.add('hidden');
   renderProbanden(document.getElementById('search-input').value);
-  showToast(formatOk ? ('✓ ' + pseudo + ' angelegt') : ('⚠ ' + pseudo + ' angelegt – Format ungültig (z.B. P1234ABC)'));
+  buildProbandSelect();
+  const warnings = [];
+  if (!formatOk) warnings.push('Pseudonym-Format');
+  if (!sensorOk) warnings.push('SNR außerhalb 1–12/bereits vergeben');
+  showToast(warnings.length ? ('⚠ ' + pseudo + ' angelegt – Hinweis: ' + warnings.join(', ')) : ('✓ ' + pseudo + ' angelegt'));
 }
 function clearAddForm() {
   ['inp-pseudo','inp-sensor','inp-note','inp-sensor-an','inp-sensor-ab'].forEach(id => { document.getElementById(id).value = ''; });
   setPseudoFieldValidity('inp-pseudo', 'inp-pseudo-error');
+  setSensorFieldValidity('inp-sensor', 'inp-sensor-error', null);
 }
 
 // ── Teilnehmende Edit/Delete ──────────────────────────────────────────────────
@@ -323,6 +353,7 @@ function openProbandEdit(id) {
   document.getElementById('edit-sensor-an').value = isoToTimeInput(p.sensorAngelegtISO);
   document.getElementById('edit-sensor-ab').value = isoToTimeInput(p.sensorAbgelegtISO);
   setPseudoFieldValidity('edit-pseudo', 'edit-pseudo-error');
+  setSensorFieldValidity('edit-sensor', 'edit-sensor-error', editingProbandId);
   document.getElementById('proband-edit-overlay').classList.remove('hidden');
 }
 function closeProbandEdit() {
@@ -336,6 +367,9 @@ document.getElementById('proband-edit-overlay').addEventListener('click', e => {
 });
 document.getElementById('edit-pseudo').addEventListener('input', () =>
   setPseudoFieldValidity('edit-pseudo', 'edit-pseudo-error')
+);
+document.getElementById('edit-sensor').addEventListener('input', () =>
+  setSensorFieldValidity('edit-sensor', 'edit-sensor-error', editingProbandId)
 );
 
 document.getElementById('btn-save-proband-edit').addEventListener('click', () => {
@@ -351,8 +385,8 @@ document.getElementById('btn-save-proband-edit').addEventListener('click', () =>
   const formatOk = setPseudoFieldValidity('edit-pseudo', 'edit-pseudo-error');
   if (!sRaw)   { showToast('⚠ Sensoriknummer eingeben'); return; }
   const sensor = parseInt(sRaw, 10);
-  if (isNaN(sensor) || sensor < 1 || sensor > 12) { showToast('⚠ Sensoriknummer 1–12'); return; }
-  if (probanden.some((p,i) => i !== idx && String(p.sensor) === String(sensor))) { showToast('⚠ SNR vergeben'); return; }
+  if (isNaN(sensor)) { showToast('⚠ Sensoriknummer muss eine Zahl sein'); return; }
+  const sensorOk = setSensorFieldValidity('edit-sensor', 'edit-sensor-error', editingProbandId);
   if (probanden.some((p,i) => i !== idx && p.pseudo.toLowerCase() === pseudo.toLowerCase())) { showToast('⚠ Pseudonym vergeben'); return; }
   const baseAn = probanden[idx].sensorAngelegtISO || probanden[idx].createdAt || new Date().toISOString();
   const baseAb = probanden[idx].sensorAbgelegtISO || probanden[idx].createdAt || new Date().toISOString();
@@ -364,7 +398,10 @@ document.getElementById('btn-save-proband-edit').addEventListener('click', () =>
   closeProbandEdit();
   renderProbanden(document.getElementById('search-input').value);
   buildProbandSelect();
-  showToast(formatOk ? '✓ Gespeichert' : '⚠ Gespeichert – Format ungültig (z.B. P1234ABC)');
+  const warnings = [];
+  if (!formatOk) warnings.push('Pseudonym-Format');
+  if (!sensorOk) warnings.push('SNR außerhalb 1–12/bereits vergeben');
+  showToast(warnings.length ? ('⚠ Gespeichert – Hinweis: ' + warnings.join(', ')) : '✓ Gespeichert');
 });
 
 document.getElementById('btn-delete-proband').addEventListener('click', () => {
@@ -459,21 +496,32 @@ function getSelectedProbandIds() {
 }
 
 function updateProbandBadge() {
-  const badge = document.getElementById('proband-badge');
+  const badge   = document.getElementById('proband-badge');
+  // Solange eine Aufzeichnung läuft oder gestoppt-aber-ungespeichert ist, zeigt das Badge
+  // die tatsächlich AUFGEZEICHNETE(N) Person(en) — unabhängig davon, was aktuell im
+  // Dropdown/der Mehrfachauswahl angezeigt ist (die Auswahl kann danach schon weitergeklickt sein).
+  const pending = sessionRunning || !!sessionEndISO;
+  const ids     = pending ? recordingProbandIds : getSelectedProbandIds();
   if (settings.multiProband) {
-    const n = selectedProbandIds.length;
+    const n = ids.length;
     if (n > 0) {
-      badge.textContent = `✓  ${n} Teilnehmende ausgewählt`;
+      if (pending) {
+        const names = ids.map(id => { const p = probanden.find(x => x.id === id); return p ? p.pseudo : '?'; });
+        badge.textContent = '🔴 Aufzeichnung: ' + names.join(', ');
+      } else {
+        badge.textContent = `✓  ${n} Teilnehmende ausgewählt`;
+      }
       badge.classList.remove('hidden');
     } else {
       badge.classList.add('hidden');
     }
     return;
   }
-  const sel = document.getElementById('sel-proband');
-  const p   = probanden.find(x => x.id === sel.value);
+  const p = probanden.find(x => x.id === ids[0]);
   if (p) {
-    badge.textContent = `✓  ${p.pseudo}${p.note ? '  ·  ' + p.note : ''}`;
+    badge.textContent = pending
+      ? '🔴 Aufzeichnung: ' + p.pseudo
+      : `✓  ${p.pseudo}${p.note ? '  ·  ' + p.note : ''}`;
     badge.classList.remove('hidden');
   } else {
     badge.classList.add('hidden');
@@ -519,6 +567,10 @@ function startTimer() {
 function beginTimer() {
   if (!getSelectedProbandIds().length) { showToast('⚠ Teilnehmende wählen'); return; }
   if (!selectedScenId) { showToast('⚠ Szenario wählen'); return; }
+  // Auswahl JETZT einfrieren — ab hier maßgeblich für diese Aufzeichnung, unabhängig davon,
+  // ob später (versehentlich) am Dropdown/Szenario-Grid weitergeklickt wird.
+  recordingProbandIds = getSelectedProbandIds().slice();
+  recordingScenId     = selectedScenId;
   timerStart      = Date.now();
   timerElapsed    = 0;
   sessionRunning  = true;
@@ -605,7 +657,8 @@ function updateTimerUI() {
   const btnResume = document.getElementById('btn-resume');
   const btnStop   = document.getElementById('btn-stop');
   const display   = document.getElementById('timer-display');
-  const sc = scenarios.find(s => s.id === selectedScenId);
+  const pending   = sessionRunning || !!sessionEndISO;
+  const sc = scenarios.find(s => s.id === (pending ? recordingScenId : selectedScenId));
   const pauseInfo = pauses.length
     ? '  ·  Pausen: ' + pauses.length + ' (' + formatTime(totalPauseSeconds(pauses)) + ')'
     : '';
@@ -624,7 +677,7 @@ function updateTimerUI() {
     btnStop.classList.remove('hidden');
   } else if (sessionEndISO) {
     status.innerHTML = '<span class="status-done">✓ Abgeschlossen</span>';
-    meta.textContent = localTimeStr(sessionStartISO) + ' → ' + localTimeStr(sessionEndISO) + '  ·  ' + formatTime(timerElapsed) + pauseInfo;
+    meta.textContent = localTimeStr(sessionStartISO) + ' → ' + localTimeStr(sessionEndISO) + '  ·  ' + formatTime(timerElapsed) + (sc ? '  ·  ' + sc.abbr : '') + pauseInfo;
     btnStart.classList.remove('hidden');
     display.textContent = formatTime(timerElapsed);
   } else {
@@ -633,6 +686,25 @@ function updateTimerUI() {
     display.textContent = '00:00';
     btnStart.classList.remove('hidden');
   }
+
+  setSessionControlsLocked(sessionRunning);
+  updateProbandBadge();
+}
+
+// Sperrt Teilnehmende-/Szenario-Auswahl, solange eine Aufzeichnung LÄUFT — verhindert, dass
+// versehentliches Weiterklicken während der Aufnahme die spätere Zuordnung beim Speichern
+// verändert (die Zuordnung ist seit beginTimer() ohnehin per recordingProbandIds/recordingScenId
+// eingefroren; die Sperre macht das zusätzlich für die Bedienperson sichtbar/eindeutig).
+// Nach dem Stoppen (sessionEndISO gesetzt, aber noch nicht gespeichert) bleibt die Auswahl bewusst
+// bedienbar, damit z. B. schon die nächste Person/das nächste Szenario vorbereitet werden kann,
+// ohne die noch ungespeicherte Aufzeichnung zu beeinflussen.
+function setSessionControlsLocked(locked) {
+  const selProband = document.getElementById('sel-proband');
+  if (selProband) selProband.disabled = locked;
+  document.querySelectorAll('#proband-multi-list .proband-multi-item').forEach(b => b.disabled = locked);
+  document.querySelectorAll('#scenario-grid .scenario-btn').forEach(b => b.disabled = locked);
+  document.getElementById('proband-lock-hint')?.classList.toggle('hidden', !locked);
+  document.getElementById('scenario-lock-hint')?.classList.toggle('hidden', !locked);
 }
 
 document.getElementById('btn-start').addEventListener('click', startTimer);
@@ -641,11 +713,14 @@ document.getElementById('btn-resume').addEventListener('click', resumeTimer);
 document.getElementById('btn-stop').addEventListener('click', stopTimer);
 
 document.getElementById('btn-save-session').addEventListener('click', () => {
-  const probandIds = getSelectedProbandIds();
+  // Bewusst die bei Start EINGEFRORENE Auswahl verwenden, nicht die aktuelle Live-Auswahl —
+  // sonst würde ein zwischenzeitliches Weiterklicken im Dropdown/Szenario-Grid (z. B. beim
+  // Vorbereiten der nächsten Person/des nächsten Szenarios) die Sitzung falsch zuordnen.
+  const probandIds = recordingProbandIds.slice();
   if (!probandIds.length) { showToast('⚠ Keine Teilnehmenden'); return; }
   if (!sessionStartISO) { showToast('⚠ Nicht gestartet'); return; }
   if (!sessionEndISO)   { showToast('⚠ Nicht gestoppt'); return; }
-  const sc = scenarios.find(x => x.id === selectedScenId);
+  const sc = scenarios.find(x => x.id === recordingScenId);
   const deviations = getActiveTags('deviation-tags');
   const notes      = document.getElementById('session-notes').value.trim();
   const newSessionIds = probandIds.map(probandId => {
@@ -655,7 +730,7 @@ document.getElementById('btn-save-session').addEventListener('click', () => {
       id: newSessionId, probandId,
       pseudo:       p  ? p.pseudo  : '?',
       sensor:       p  ? p.sensor  : '?',
-      scenarioId:   selectedScenId,
+      scenarioId:   recordingScenId,
       scenarioName: sc ? sc.name   : '?',
       scenarioAbbr: sc ? sc.abbr   : '?',
       date:         localDateStr(sessionStartISO),
@@ -674,6 +749,7 @@ document.getElementById('btn-save-session').addEventListener('click', () => {
   save();
   sessionStartISO = null; sessionEndISO = null; timerElapsed = 0;
   pauses = []; sessionPaused = false; pauseStart = null; pauseStartISO = null;
+  recordingProbandIds = []; recordingScenId = '';
   document.getElementById('save-card').classList.add('hidden');
   renderTagRow('deviation-tags');
   document.getElementById('session-notes').value = '';

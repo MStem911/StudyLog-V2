@@ -51,7 +51,7 @@
       </button>
     </nav>
     <div class="sidebar-footer">
-      <span class="app-version">v2.7.2</span>
+      <span class="app-version">v2.7.3</span>
       <span class="lock-icon">🔒</span>
     </div>
   </aside>
@@ -69,7 +69,7 @@
         </div>
       </div>
       <div class="topbar-right">
-        <span class="app-version">v2.7.2</span>
+        <span class="app-version">v2.7.3</span>
         <span class="lock-icon">🔒</span>
       </div>
     </header>
@@ -100,6 +100,7 @@
               <div>
                 <label class="field-label" for="inp-sensor">Sensoriknummer (1–12)</label>
                 <input type="number" id="inp-sensor" placeholder="z.B. 7" min="1" max="12" inputmode="numeric">
+                <div class="field-error hidden" id="inp-sensor-error">Außerhalb 1–12 oder bereits vergeben</div>
               </div>
               <div class="form-grid-full">
                 <label class="field-label" for="inp-note">Notiz (optional)</label>
@@ -147,6 +148,7 @@
                 </select>
                 <div class="proband-multi-list hidden" id="proband-multi-list"></div>
                 <div class="confirm-badge hidden" id="proband-badge"></div>
+                <div class="lock-hint hidden" id="proband-lock-hint">🔒 Gesperrt, solange die Aufzeichnung läuft</div>
               </div>
               <div class="card">
                 <div class="card-label-row">
@@ -154,6 +156,7 @@
                   <button class="btn-text" id="btn-manage-scenarios">⚙ Verwalten</button>
                 </div>
                 <div class="scenario-grid" id="scenario-grid"></div>
+                <div class="lock-hint hidden" id="scenario-lock-hint">🔒 Gesperrt, solange die Aufzeichnung läuft</div>
               </div>
               <div class="card">
                 <div class="card-label-row">
@@ -483,6 +486,7 @@
           <div>
             <label class="field-label" for="edit-sensor">Sensoriknummer (1–12)</label>
             <input type="number" id="edit-sensor" min="1" max="12" inputmode="numeric">
+            <div class="field-error hidden" id="edit-sensor-error">Außerhalb 1–12 oder bereits vergeben</div>
           </div>
         </div>
         <label class="field-label" for="edit-note">Notiz (optional)</label>

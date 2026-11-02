@@ -135,16 +135,16 @@ Dropdown vorausgewählt (Einzel-Modus).
 |---|---|---|
 | App Version / Storage Keys / Defaults | 1–58 | Versions-Konstante, `localStorage`-Keys, Default-Szenarien/Tags, State-Deklaration |
 | Persistence | 58–92 | `save()`, `load()` |
-| Utilities | 92–166 | `uid()`, Datum/Zeit-Formatierung (`formatTime`, `localTimeStr`, `isoToTimeInput`, `rebuildISO`), `esc()` (HTML-Escaping gegen XSS beim Rendern von Nutzereingaben), `showToast()`, `isValidPseudoFormat()`/`setPseudoFieldValidity()` (Pseudonym-Formatprüfung inkl. Live-Rotmarkierung im Formular) |
-| Confirm Dialog | 166–183 | Generischer Bestätigungsdialog (`showConfirm`), von mehreren Lösch-Aktionen wiederverwendet |
-| Navigation | 183–234 | `showScreen()` (Screen-Wechsel + Re-Render des Zielscreens), Nav-Button-Listener |
-| TEILNEHMENDE | 234–389 | Liste rendern/filtern, Anlegen, Bearbeiten, Löschen von Personen (inkl. Pseudonym-Formatprüfung — live per `input`-Listener und beim Speichern — beim Anlegen/Bearbeiten) |
-| SESSION | 389–~830 | Szenario-Auswahl, Teilnehmenden-Auswahl (Einzel- **und** Mehrfachauswahl je nach `settings.multiProband`, `getSelectedProbandIds()`), Start/Pause/Fortsetzen/Stopp-Timer (`startTimer`, `pauseTimer`, `resumeTimer`, `stopTimer`), Tag-Zeilen, Sitzung speichern (ggf. mehrere Einträge bei Mehrfachauswahl), Szenario-/Tag-Manager (CRUD für Konfiguration) |
-| LOG | 830–1034 | Sitzungsliste mit Filtern, Detailansicht, Bearbeiten, Löschen |
-| EXPORT | 1034–1145 | Statistiken, CSV-/JSON-Export, Geräte-Label |
-| EINSTELLUNGEN | 1145–1157 | `renderSettingsScreen()`, Toggle "Mehrere Teilnehmende gleichzeitig" (`settings.multiProband`), "Alle Daten löschen" (`btn-clear-data`) |
-| BEWERTUNGSBOGEN | 1157–1410 | Post-Session-Prompt (inkl. Vorschlag zur gemeinsamen Bewertung bei mehreren Teilnehmenden), Sitzungsauswahl (Einzel- **und** Mehrfachauswahl je nach `settings.multiProband`, `getSelectedBewSessionIds()`), 19 Bewertungsskalen (1–6), Speichern/Überschreiben (ggf. mehrere Einträge bei Mehrfachauswahl) |
-| INIT | 1410–1423 | Startsequenz: `load()`, initiales Rendering aller Screens, Versionsanzeige |
+| Utilities | 92–180 | `uid()`, Datum/Zeit-Formatierung (`formatTime`, `localTimeStr`, `isoToTimeInput`, `rebuildISO`), `esc()` (HTML-Escaping gegen XSS beim Rendern von Nutzereingaben), `showToast()`, `isValidPseudoFormat()`/`setPseudoFieldValidity()` (Pseudonym-Formatprüfung) und `setSensorFieldValidity()` (Sensoriknummer-Prüfung) — beide inkl. Live-Rotmarkierung im Formular |
+| Confirm Dialog | 180–197 | Generischer Bestätigungsdialog (`showConfirm`), von mehreren Lösch-Aktionen wiederverwendet |
+| Navigation | 197–248 | `showScreen()` (Screen-Wechsel + Re-Render des Zielscreens), Nav-Button-Listener |
+| TEILNEHMENDE | 248–~400 | Liste rendern/filtern, Anlegen, Bearbeiten, Löschen von Personen (inkl. Pseudonym- und Sensoriknummer-Prüfung — live per `input`-Listener und beim Speichern — beim Anlegen/Bearbeiten) |
+| SESSION | ~400–~880 | Szenario-Auswahl, Teilnehmenden-Auswahl (Einzel- **und** Mehrfachauswahl je nach `settings.multiProband`, `getSelectedProbandIds()`), Start/Pause/Fortsetzen/Stopp-Timer (`startTimer`, `pauseTimer`, `resumeTimer`, `stopTimer`), **Fixierung der Auswahl bei Start** (`recordingProbandIds`/`recordingScenId`, `setSessionControlsLocked()` — siehe eigener Abschnitt unten), Tag-Zeilen, Sitzung speichern (ggf. mehrere Einträge bei Mehrfachauswahl), Szenario-/Tag-Manager (CRUD für Konfiguration) |
+| LOG | 906–1110 | Sitzungsliste mit Filtern, Detailansicht, Bearbeiten, Löschen |
+| EXPORT | 1110–1221 | Statistiken, CSV-/JSON-Export, Geräte-Label |
+| EINSTELLUNGEN | 1221–1234 | `renderSettingsScreen()`, Toggle "Mehrere Teilnehmende gleichzeitig" (`settings.multiProband`), "Alle Daten löschen" (`btn-clear-data`) |
+| BEWERTUNGSBOGEN | 1234–1486 | Post-Session-Prompt (inkl. Vorschlag zur gemeinsamen Bewertung bei mehreren Teilnehmenden), Sitzungsauswahl (Einzel- **und** Mehrfachauswahl je nach `settings.multiProband`, `getSelectedBewSessionIds()`), 19 Bewertungsskalen (1–6), Speichern/Überschreiben (ggf. mehrere Einträge bei Mehrfachauswahl) |
+| INIT | 1486–1499 | Startsequenz: `load()`, initiales Rendering aller Screens, Versionsanzeige |
 
 ## Konventionen im Code
 
@@ -192,6 +192,32 @@ jeweiligen Event-Handler).
 per CSS ein-/ausgeblendet; `app.js` hält deshalb für Navigation zwei parallele
 Listener-Registrierungen (`.nav-btn` und `.nav-item`), die beide `showScreen()` aufrufen.
 
+## Sitzungs-Aufzeichnung: Fixierung der Teilnehmenden-/Szenario-Auswahl (seit v2.7.3)
+
+**Problem (bis v2.7.2):** `selectedScenId` sowie die Teilnehmenden-Auswahl (`#sel-proband` /
+`selectedProbandIds`) waren einfache, jederzeit änderbare globale Variablen. Der
+`btn-save-session`-Handler las sie beim Klick auf "Sitzung speichern" live aus — nicht die
+Werte, die beim Start der Aufzeichnung (`beginTimer()`) aktuell waren. Wurde während einer
+laufenden Aufzeichnung (versehentlich oder zur Vorbereitung der nächsten Person/des nächsten
+Szenarios) eine andere Teilnehmerin oder ein anderes Szenario angetippt, wurde die Sitzung beim
+Speichern **der falschen Person bzw. dem falschen Szenario zugeordnet**, ohne jede Warnung.
+
+**Fix:** `beginTimer()` (`app.js:567`) schreibt die aktuelle Auswahl beim Start sofort in zwei
+dedizierte State-Variablen, `recordingProbandIds` und `recordingScenId` — diese sind ab diesem
+Zeitpunkt maßgeblich für diese Aufzeichnung. Der `btn-save-session`-Handler liest ausschließlich
+noch diese beiden Variablen, nie mehr `selectedScenId`/die Live-Dropdown-Auswahl. Zusätzlich
+sperrt `setSessionControlsLocked()` (`app.js:701`) das Teilnehmenden-Dropdown/die
+Mehrfachauswahl-Liste und das Szenario-Grid (per `disabled`-Attribut auf den jeweiligen
+`<select>`/`<button>`-Elementen) **solange `sessionRunning === true`** ist — sichtbar gemacht
+durch die Hinweis-Texte `#proband-lock-hint`/`#scenario-lock-hint`. Nach **⏹ Stopp** (aber vor
+dem Speichern) wird die Auswahl bewusst wieder entsperrt, damit z. B. schon die nächste Person
+vorbereitet werden kann, ohne die noch ungespeicherte Aufzeichnung zu beeinflussen — die
+Zuordnung bleibt dabei trotzdem korrekt, weil `recordingProbandIds`/`recordingScenId` seit
+`beginTimer()` unverändert sind. `updateTimerUI()` (`app.js:652`) berechnet die angezeigte
+Timer-Meta-Zeile und das `#proband-badge` während einer laufenden/offenen Aufzeichnung ebenfalls
+aus `recordingScenId`/`recordingProbandIds`, nicht aus der Live-Auswahl, damit die Anzeige nie
+von dem abweicht, was tatsächlich gespeichert wird.
+
 ## Bewertungsbogen — Item-Struktur
 
 19 Items, gruppiert in 6 Dimensionen, jeweils Schulnoten-Skala 1 (sehr gut) bis 6
@@ -211,22 +237,30 @@ die CSV-Exportspalten (`app.js`, `btn-export-csv`-Handler).
   Schreibfehler nur pauschal per `try/catch` in `save()` ab und zeigt einen generischen
   Toast — kein differenziertes Verhalten bei Speicherplatzmangel.
 - Keine Datenmigration/Schema-Versionierung für `localStorage`-Inhalte (siehe oben).
-- Sensoriknummer ist hart auf den Bereich 1–12 validiert (`app.js:297`, `app.js:354`) —
-  Änderung dieses Bereichs erfordert Anpassung an beiden Stellen.
+- Sensoriknummer (erwarteter Bereich 1–12) und Eindeutigkeit der Sensoriknummer werden per
+  `setSensorFieldValidity()` (`app.js:122`) geprüft, aber **nicht hart erzwungen** (seit
+  v2.7.3; vorher blockierend über zwei `return`-Checks in `saveNewProband()` bzw. im
+  `btn-save-proband-edit`-Handler) — Mehrfachvergabe und Nummern außerhalb 1–12 sind bewusst
+  möglich (z. B. wenn mehr als 12 Sensor-Einheiten im Umlauf sind oder eine Nummer über
+  mehrere Erhebungstage hinweg wiederverwendet wird), es erscheint dabei nur eine rote
+  Markierung + Hinweis-Toast, analog zur Pseudonym-Prüfung unten. Die Prüfung ignoriert bei
+  Bearbeitung die eigene ID (`excludeId`-Parameter), damit eine Person nicht fälschlich als
+  Duplikat ihrer selbst markiert wird.
 - Pseudonym-Format "1 Buchstabe, 4 Zahlen, 3 Buchstaben" (z. B. `P1234ABC`) wird per
   `PSEUDO_FORMAT_REGEX`/`isValidPseudoFormat()` in `app.js:99–100` geprüft, aber **nicht hart
   erzwungen** — die Prüfung ist reine Warnung, Speichern/Anlegen ist auch bei falschem Format
   möglich (seit v2.7.2; vorher blockierend). Live-Feedback übernimmt `setPseudoFieldValidity()`
-  (`app.js:104–112`): sie markiert das jeweilige Eingabefeld (`#inp-pseudo`/`#edit-pseudo`) per
+  (`app.js:108–116`): sie markiert das jeweilige Eingabefeld (`#inp-pseudo`/`#edit-pseudo`) per
   CSS-Klasse `field-invalid` (roter Rahmen) und blendet den Hinweistext
   `#inp-pseudo-error`/`#edit-pseudo-error` ("Format nicht korrekt") ein, sobald ein nicht-leerer
   Wert nicht zum Format passt — ausgelöst per `input`-Listener bei jedem Tastendruck sowie beim
-  Öffnen des Bearbeiten-Dialogs. Beim Klick auf Speichern (`app.js:294`, `app.js:351`) wird das
-  Ergebnis in `formatOk` zwischengespeichert; ist es `false`, wird trotzdem gespeichert und
-  stattdessen ein Hinweis-Toast ("⚠ ... Format ungültig") statt des normalen Erfolgs-Toasts
-  gezeigt. Ein leeres Feld gilt bewusst nicht als ungültig (keine Fehlermarkierung vor der
-  ersten Eingabe). Die Prüfung greift nur bei Neuanlage/Bearbeitung; bereits vorhandene
-  Pseudonyme in älteren `localStorage`-Datenständen, die diesem Format nicht entsprechen,
+  Öffnen des Bearbeiten-Dialogs. Beim Klick auf Speichern wird das Ergebnis in `formatOk`
+  zwischengespeichert; ist es (oder das Sensor-Pendant `sensorOk`) `false`, wird trotzdem
+  gespeichert und stattdessen ein zusammenfassender Hinweis-Toast ("⚠ ... – Hinweis: ...")
+  statt des normalen Erfolgs-Toasts gezeigt. Ein leeres Feld gilt bewusst nicht als ungültig
+  (keine Fehlermarkierung vor der ersten Eingabe). Die Prüfung greift nur bei
+  Neuanlage/Bearbeitung; bereits vorhandene Pseudonyme in älteren `localStorage`-Datenständen,
+  die diesem Format nicht entsprechen,
   werden dadurch **nicht** automatisch verändert (keine Migration) — beim Öffnen des
   Bearbeiten-Dialogs für eine solche Person wird das Feld allerdings sofort als ungültig
   markiert.
